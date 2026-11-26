@@ -1,0 +1,15 @@
+package library
+
+import (
+	"context"
+
+	"github.com/longxi-go/gosr/pkg/event"
+)
+
+// +ioc:component
+// +ioc:listener
+type Audit struct{}
+
+func (*Audit) OnEvent(context.Context, event.Event) error {
+	return nil
+}

@@ -1,0 +1,16 @@
+package library
+
+type Port interface {
+	Value() string
+}
+
+// +ioc:component
+// +ioc:expose=Port
+type Local struct {
+	// +ioc:inject
+	Port Port
+}
+
+func (*Local) Value() string {
+	return "local"
+}

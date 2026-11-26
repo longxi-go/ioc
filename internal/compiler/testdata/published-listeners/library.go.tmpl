@@ -1,0 +1,35 @@
+package library
+
+import (
+	"context"
+
+	"github.com/longxi-go/gosr/pkg/event"
+)
+
+type Placed struct {
+	event.BaseEvent
+}
+
+var Created int
+
+// +ioc:component:name=libraryAudit
+// +ioc:listener
+type Audit struct {
+	// +ioc:inject
+	Publisher event.Publisher
+	Calls     int
+}
+
+func (a *Audit) Init(context.Context) error {
+	Created++
+	return nil
+}
+
+func (a *Audit) OnEvent(context.Context, Placed) error {
+	a.Calls++
+	return nil
+}
+
+func (*Audit) Order() int {
+	return 100
+}

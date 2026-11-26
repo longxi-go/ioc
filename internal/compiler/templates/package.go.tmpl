@@ -1,0 +1,54 @@
+{{define "package"}}func init() {
+    catalog.Default().Contribute(bean.Batch{
+        ID: {{printf "%q" .ID}},
+        Schema: {{.Schema}},
+        Registrations: []bean.Registration{
+{{range .Registrations}}            {
+                Definition: {{template "definition" .Definition}},
+{{if .Conditions}}                Conditions: []bean.Condition{
+{{range .Conditions}}                    {
+{{with .Property}}                        Property: &bean.PropertyCondition{
+                            Prefix: {{printf "%q" .Prefix}},
+                            Names: {{template "strings" .Names}},
+{{if .HavingValue}}                            HavingValue: new({{printf "%q" (stringValue .HavingValue)}}),
+{{end}}                            MatchIfMissing: {{.MatchIfMissing}},
+                        },
+{{end}}{{if .Profiles}}                        Profiles: {{template "strings" .Profiles}},
+{{end}}
+                        Missing: {{template "selector" .Missing}},
+                        Present: {{template "selector" .Present}},
+                    },
+{{end}}                },
+{{end}}                Accept: func(value any) bool {
+{{if .PointerResult}}                    typed, ok := value.({{.Result}})
+                    return ok && typed != nil
+{{else}}                    _, ok := value.({{.Result}})
+                    return ok
+{{end}}
+                },
+{{if .Listeners}}                Listeners: []bean.Listener{
+{{range .Listeners}}{{template "listener" .}},
+{{end}}                },
+{{end}}                Create: func(ctx context.Context, ports bean.Ports) (any, error) {
+{{range .Arguments}}                    {{.Name}}, err := {{.Expression}}
+                    if err != nil {
+                        return nil, err
+                    }
+{{end}}{{if .Component}}                    value := &{{.Component}}{}
+{{range .Fields}}                    value.{{.Field}} = {{.Value}}
+{{end}}                    return value, nil
+{{else if .PointerResult}}                    value{{if .ReturnsError}}, err{{end}} := {{.Function}}({{.CallArguments}})
+                    if value == nil {
+                        return nil, {{if .ReturnsError}}err{{else}}nil{{end}}
+                    }
+                    return value, {{if .ReturnsError}}err{{else}}nil{{end}}
+{{else}}                    return {{.Function}}({{.CallArguments}}){{if not .ReturnsError}}, nil{{end}}
+{{end}}                },
+{{$result := .Result}}{{range .Hooks}}                {{.}}: func(ctx context.Context, value any) error {
+                    return value.({{$result}}).{{.}}(ctx)
+                },
+{{end}}            },
+{{end}}        },
+    })
+}
+{{end}}

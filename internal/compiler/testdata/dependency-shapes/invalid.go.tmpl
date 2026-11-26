@@ -1,0 +1,14 @@
+package main
+
+import gs "github.com/longxi-go/gosr/pkg/ioc"
+
+type Dependency = DEPENDENCY
+
+// +ioc:bean
+func Consumer(value Dependency) int {
+	return 0
+}
+
+var _ gs.Optional[int]
+
+func main() {}

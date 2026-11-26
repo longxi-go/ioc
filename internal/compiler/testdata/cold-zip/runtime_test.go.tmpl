@@ -1,0 +1,32 @@
+package main
+
+import (
+	"context"
+	"testing"
+
+	app "github.com/longxi-go/ioc/pkg/context"
+	lib "{{.ModulePath}}"
+)
+
+func TestPublishedListener(t *testing.T) {
+	ctx := context.Background()
+	a, err := app.NewApplicationContext(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	if err := a.PublishEvent(ctx, lib.E{}); err != nil {
+		t.Fatal(err)
+	}
+	receiver, err := a.GetBean[*lib.Audit](ctx)
+	if err != nil || receiver.Calls != 1 {
+		t.Fatal(receiver, err)
+	}
+}

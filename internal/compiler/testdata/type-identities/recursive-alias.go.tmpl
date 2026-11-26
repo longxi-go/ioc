@@ -1,0 +1,18 @@
+package main
+
+type Public struct{}
+
+type privateAlias = Public
+
+// +ioc:bean
+func New() map[string]privateAlias {
+	return nil
+}
+
+// +ioc:bean
+func Use(map[string]Public) int {
+	return 0
+}
+
+func main() {
+}

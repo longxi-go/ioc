@@ -1,0 +1,24 @@
+package main
+
+import (
+	"context"
+
+	"github.com/longxi-go/gosr/pkg/event"
+)
+
+type E struct {
+	event.BaseEvent
+}
+
+var _ context.Context
+
+// +ioc:component
+// +ioc:listener
+type A struct{}
+
+func (*A) OnEvent(context.Context, string) error {
+	return nil
+}
+
+func main() {
+}

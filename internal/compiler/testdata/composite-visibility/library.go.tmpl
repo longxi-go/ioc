@@ -1,0 +1,37 @@
+package library
+
+type Public struct{}
+
+type privateAlias = Public
+
+type privatePort interface {
+	M()
+}
+
+type implementation struct{}
+
+func (*implementation) M() {
+}
+
+// +ioc:bean:name=embedded
+func Embedded() interface {
+	privatePort
+} {
+	return &implementation{}
+}
+
+type hidden struct{}
+
+// +ioc:bean:name=public
+func New() privateAlias {
+	return Public{}
+}
+
+// +ioc:bean:name=composite
+func Composite() struct {
+	Value *hidden
+} {
+	return struct {
+		Value *hidden
+	}{}
+}

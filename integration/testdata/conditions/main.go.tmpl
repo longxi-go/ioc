@@ -1,0 +1,44 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/longxi-go/ioc"
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+// +ioc:bean:name=selected
+// +ioc:conditional:on-property:name=mode,havingValue="user"
+func User() string {
+	fmt.Println("create user")
+	return "user"
+}
+
+// +ioc:bean:name=selected
+// +ioc:conditional:on-missing-bean:type=string
+func Fallback() string {
+	fmt.Println("create fallback")
+	return "fallback"
+}
+
+func main() {
+	ctx := context.Background()
+	for _, mode := range []string{"user", "default"} {
+		application, err := ioc.NewApplicationContext(context.Background(), app.WithProperties(map[string]string{"mode": mode}))
+		if err != nil {
+			panic(err)
+		}
+		if err := application.Start(ctx); err != nil {
+			panic(err)
+		}
+		value, err := application.GetBean[string](ctx)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(value)
+		if err := application.Close(ctx); err != nil {
+			panic(err)
+		}
+	}
+}

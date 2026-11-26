@@ -1,0 +1,10 @@
+{{define "file"}}{{.Header}}{{if .Constraint}}//go:build {{.Constraint}}
+{{end}}
+package {{.Package}}
+{{if .Imports}}
+import (
+{{range .Imports}}    {{.Alias}} {{printf "%q" .Path}}
+{{end}})
+{{end}}
+{{.Body}}
+{{end}}

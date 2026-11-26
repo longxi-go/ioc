@@ -1,0 +1,11 @@
+package library
+
+type Value struct{}
+
+// +ioc:bean:name=published,aliases={publishedAlias}
+// +ioc:profile={dev,test}
+// +ioc:conditional:on-property:name={first,second}
+// +ioc:conditional:on-property:name=empty,havingValue=""
+func NewValue() *Value {
+	return &Value{}
+}

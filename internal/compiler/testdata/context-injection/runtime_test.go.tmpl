@@ -1,0 +1,28 @@
+package main
+
+import (
+	"context"
+	"testing"
+
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestOperationContextParameter(t *testing.T) {
+	ctx := context.Background()
+	application, err := app.NewApplicationContext(context.Background(), app.WithPlan("example.org/app"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := application.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := application.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	available, err := application.GetBean[bool](ctx)
+	if err != nil || !available {
+		t.Fatal("factory context parameter was not injected", err)
+	}
+}

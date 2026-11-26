@@ -1,0 +1,8 @@
+package library
+
+import "unsafe"
+
+// +ioc:bean
+func Word() [unsafe.Sizeof(uintptr(0))]byte {
+	return [unsafe.Sizeof(uintptr(0))]byte{}
+}

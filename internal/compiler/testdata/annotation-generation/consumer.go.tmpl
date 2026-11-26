@@ -1,0 +1,39 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	lib "example.org/library"
+	"github.com/longxi-go/ioc"
+	app "github.com/longxi-go/ioc/pkg/context"
+	nemoenv "github.com/longxi-go/nemo/pkg/environment"
+)
+
+func main() {
+	ctx := context.Background()
+	properties := map[string]string{"first": "yes", "second": "yes", "empty": ""}
+	profiles := []string{"dev"}
+	if os.Getenv("SCENARIO") == "property" {
+		delete(properties, "second")
+	}
+	if os.Getenv("SCENARIO") == "profile" {
+		profiles = nil
+	}
+	a, err := ioc.NewApplicationContext(ctx, app.WithEnvironmentOptions(nemoenv.WithProfiles(profiles...)), app.WithProperties(properties))
+	if err != nil {
+		panic(err)
+	}
+	if err = a.Start(ctx); err != nil {
+		panic(err)
+	}
+	_, err = a.GetBean[*lib.Value](ctx, "published")
+	if err != nil {
+		panic(err)
+	}
+	if err = a.Close(ctx); err != nil {
+		panic(err)
+	}
+	fmt.Println("selected")
+}

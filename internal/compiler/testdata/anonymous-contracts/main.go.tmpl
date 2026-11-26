@@ -1,0 +1,21 @@
+package main
+
+// +ioc:bean
+func New() struct {
+	Fn func(left int)
+} {
+	return struct {
+		Fn func(left int)
+	}{}
+}
+
+// +ioc:bean
+func Use(value struct {
+	Fn func(right int)
+},
+) int {
+	return 0
+}
+
+func main() {
+}

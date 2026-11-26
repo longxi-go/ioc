@@ -1,0 +1,55 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/longxi-go/gosr/pkg/event"
+	"github.com/longxi-go/ioc"
+)
+
+type Placed struct {
+	event.BaseEvent
+}
+
+type Receiver interface {
+	OnEvent(context.Context, Placed) error
+}
+
+type receiver struct {
+	calls int
+}
+
+func (r *receiver) OnEvent(context.Context, Placed) error {
+	r.calls++
+	return nil
+}
+
+var instance = &receiver{}
+
+// +ioc:bean:name=receiver
+// +ioc:listener
+func NewReceiver() Receiver {
+	return instance
+}
+
+func main() {
+	ctx := context.Background()
+	a, err := ioc.NewApplicationContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+	if err = a.Start(ctx); err != nil {
+		panic(err)
+	}
+	if _, err = a.GetBean[Receiver](ctx); err != nil {
+		panic(err)
+	}
+	if err = a.PublishEvent(ctx, Placed{}); err != nil {
+		panic(err)
+	}
+	if err = a.Close(ctx); err != nil {
+		panic(err)
+	}
+	fmt.Println(instance.calls)
+}

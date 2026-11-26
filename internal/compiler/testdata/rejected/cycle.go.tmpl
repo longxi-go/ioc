@@ -1,0 +1,18 @@
+package main
+
+type A struct{}
+
+type B struct{}
+
+// +ioc:bean
+func NewA(*B) *A {
+	return nil
+}
+
+// +ioc:bean
+func NewB(*A) *B {
+	return nil
+}
+
+func main() {
+}

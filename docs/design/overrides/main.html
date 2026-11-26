@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <!-- Load before Material so its renderer uses this pinned Mermaid version. -->
+  <script src="https://unpkg.com/mermaid@11.12.1/dist/mermaid.min.js" crossorigin="anonymous"></script>
+{% endblock %}

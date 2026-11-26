@@ -1,0 +1,8 @@
+//go:build race
+
+package library
+
+// +ioc:bean
+func RaceReady() bool {
+	return true
+}

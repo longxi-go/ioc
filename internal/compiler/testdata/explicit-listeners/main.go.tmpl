@@ -1,0 +1,48 @@
+package main
+
+import (
+	"context"
+
+	"github.com/longxi-go/gosr/pkg/event"
+)
+
+type Placed struct {
+	event.BaseEvent
+}
+
+// +ioc:component:name=audit
+// +ioc:listener
+type Audit struct {
+	Calls int
+}
+
+// +ioc:listen
+// +ioc:order=100
+func (a *Audit) OnEvent(context.Context, Placed) error {
+	a.Calls++
+	return nil
+}
+
+// +ioc:component
+type Notices struct {
+	Calls int
+}
+
+// +ioc:listen
+func (n *Notices) onPlaced(context.Context, Placed) error {
+	n.Calls++
+	return nil
+}
+
+// +ioc:component
+type Ordinary struct {
+	Calls int
+}
+
+func (n *Ordinary) OnEvent(context.Context, Placed) error {
+	n.Calls++
+	return nil
+}
+
+func main() {
+}

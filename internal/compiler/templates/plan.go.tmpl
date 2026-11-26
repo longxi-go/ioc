@@ -1,0 +1,34 @@
+{{define "plan"}}func init() {
+    catalog.Default().Install(bean.Plan{
+        ID: {{printf "%q" .ID}},
+        DefinitionIDs: {{template "strings" .DefinitionIDs}},
+        Query: func(ctx context.Context, factory gs.BeanFactory, target any, names []string, collection bool) error {
+            if len(names) > 1 {
+                return &gs.Error{Code: gs.InvalidSelector, Message: bean.QueryNameCountMessage}
+            }
+            selector := gs.Selector{}
+            if len(names) == 1 {
+                selector.Name = names[0]
+            }
+            if collection {
+                switch out := target.(type) {
+{{range .Cases}}                case *[]{{.Type}}:
+                    selector.Contract = {{printf "%q" .Contract}}
+                    return bean.AssignAll(ctx, factory, out, selector)
+{{end}}                default:
+                    _ = out
+                }
+            } else {
+                switch out := target.(type) {
+{{range .Cases}}                case *{{.Type}}:
+                    selector.Contract = {{printf "%q" .Contract}}
+                    return bean.Assign(ctx, factory, out, selector)
+{{end}}                default:
+                    _ = out
+                }
+            }
+            return &gs.Error{Code: gs.UnsupportedContract, Message: bean.UnsupportedQueryContractMessage}
+        },
+    })
+}
+{{end}}

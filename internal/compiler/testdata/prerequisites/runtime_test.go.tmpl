@@ -1,0 +1,28 @@
+package main
+
+import (
+	"context"
+	"slices"
+	"testing"
+
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestPrerequisiteExecution(t *testing.T) {
+	if len(calls) != 0 {
+		t.Fatal("generated init executed factories", calls)
+	}
+	a, err := app.NewApplicationContext(context.Background(), app.WithPlan("example.org/app"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(calls, []string{"migration init", "repository factory"}) {
+		t.Fatal(calls)
+	}
+}

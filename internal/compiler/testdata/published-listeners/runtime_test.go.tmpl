@@ -1,0 +1,43 @@
+package main
+
+import (
+	"context"
+	"testing"
+
+	lib "example.org/library"
+	"github.com/longxi-go/gosr/pkg/event"
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestLibraryEvents(t *testing.T) {
+	if lib.Created != 0 {
+		t.Fatal("generated init constructed listener")
+	}
+	ctx := context.Background()
+	for range 2 {
+		a, err := app.NewApplicationContext(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := a.Start(ctx); err != nil {
+			t.Fatal(err)
+		}
+		receiver, err := a.GetBean[*lib.Audit](ctx)
+		if err != nil || receiver.Calls != 0 {
+			t.Fatal(receiver, err)
+		}
+		publisher, err := a.GetBean[event.Publisher](ctx)
+		if err != nil || publisher != receiver.Publisher {
+			t.Fatal("library default publisher", publisher, err)
+		}
+		if err := publisher.PublishEvent(ctx, lib.Placed{}); err != nil || receiver.Calls != 1 {
+			t.Fatal(receiver.Calls, err)
+		}
+		if err := a.Close(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if lib.Created != 2 {
+		t.Fatal("context isolation", lib.Created)
+	}
+}

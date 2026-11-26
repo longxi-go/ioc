@@ -1,0 +1,14 @@
+package main
+
+import gs "github.com/longxi-go/gosr/pkg/ioc"
+
+// +ioc:component
+type Service struct{}
+
+// +ioc:bean
+func New(value gs.Optional[gs.Provider[*Service]]) int {
+	return 0
+}
+
+func main() {
+}

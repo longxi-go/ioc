@@ -1,0 +1,40 @@
+{{define "resolve"}}func() ({{.Type}}, error) {
+{{if .Provider}}    return {{.Type}}(func(ctx context.Context) ({{.ElementType}}, error) {
+        return {{.Inner}}
+    }), nil
+{{else}}    values, err := ports.Resolve({{.Context}}, {{.Port}})
+    if err != nil {
+        var zero {{.Type}}
+        return zero, err
+    }
+    return {{.Conversion}}
+{{end}}}(){{end}}
+
+{{define "convert"}}func() ({{.Type}}, error) {
+{{if .Optional}}    if len({{.Values}}) == 0 {
+        return {{.Type}}{}, nil
+    }
+    value, err := {{.Inner}}
+    if err != nil {
+        return {{.Type}}{}, err
+    }
+    return {{.Type}}{Value: value, Present: true}, nil
+{{else if .Many}}    result := make({{.Type}}, 0, len({{.Values}}))
+    for _, item := range {{.Values}} {
+        value, err := {{.Inner}}
+        if err != nil {
+            return nil, err
+        }
+        result = append(result, value)
+    }
+    return result, nil
+{{else}}    var zero {{.Type}}
+    if len({{.Values}}) != 1 {
+        return zero, &gs.Error{Code: gs.ContractMismatch, Message: bean.PortCardinalityMismatchMessage}
+    }
+    value, ok := {{.Values}}[0].({{.Type}})
+    if !ok {
+        return zero, &gs.Error{Code: gs.ContractMismatch, Message: bean.PortTypeMismatchMessage}
+    }
+    return value, nil
+{{end}}}(){{end}}

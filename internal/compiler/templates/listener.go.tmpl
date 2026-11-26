@@ -1,0 +1,24 @@
+{{define "listener"}}{
+    ID: {{printf "%q" .ID}},
+    Event: {{printf "%q" .Event}},
+    Source: {{template "source" .Source}},
+    Order: {{if .HasOrder}}func() *int {
+        value := {{.Order}}
+        return &value
+    }(){{else}}nil{{end}},
+    Match: func(value {{.EventInterface}}) bool {
+        _, ok := value.({{.EventType}})
+        return ok
+    },
+    Invoke: func(ctx context.Context, value any, payload {{.EventInterface}}) error {
+        receiver, ok := value.({{.Receiver}})
+        if !ok {
+            return &gs.Error{Code: gs.ContractMismatch, Message: bean.ListenerReceiverMismatchMessage}
+        }
+        typed, ok := payload.({{.EventType}})
+        if !ok {
+            return &gs.Error{Code: gs.ContractMismatch, Message: bean.ListenerEventMismatchMessage}
+        }
+        return receiver.{{.Method}}(ctx, typed)
+    },
+}{{end}}

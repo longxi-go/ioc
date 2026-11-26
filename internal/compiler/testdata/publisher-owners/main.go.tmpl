@@ -1,0 +1,40 @@
+package main
+
+import (
+	"context"
+
+	"github.com/longxi-go/gosr/pkg/event"
+)
+
+type E struct {
+	event.BaseEvent
+}
+
+type Audit struct {
+	Calls int
+}
+
+// +ioc:listen
+func (a *Audit) Observe(context.Context, E) error {
+	a.Calls++
+	return nil
+}
+
+// +ioc:bean
+func First() *Audit {
+	return &Audit{}
+}
+
+// +ioc:bean
+func Second() *Audit {
+	return &Audit{}
+}
+
+// +ioc:component
+type Service struct {
+	// +ioc:inject
+	Publisher event.Publisher
+}
+
+func main() {
+}

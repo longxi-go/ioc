@@ -1,0 +1,14 @@
+# example.org/header-only v1.0.0
+## explicit; go 1.27.0
+# example.org/versioned v1.0.0 => example.org/fork v1.2.3
+## explicit; go 1.27.0
+example.org/versioned/first
+example.org/versioned/second
+# example.org/local v1.1.0 => ./local
+## explicit; go 1.27.0
+example.org/local/service
+# example.org/missing v1.0.0
+## explicit; go 1.27.0
+example.org/missing/service
+# example.org/versioned v1.0.0 => example.org/fork v1.2.3
+# example.org/local => ./local

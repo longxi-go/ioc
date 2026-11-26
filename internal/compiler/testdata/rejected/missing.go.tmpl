@@ -1,0 +1,13 @@
+package main
+
+type Port interface {
+	Call()
+}
+
+// +ioc:bean
+func New(p Port) int {
+	return 0
+}
+
+func main() {
+}

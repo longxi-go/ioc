@@ -1,0 +1,110 @@
+package main
+
+import gs "github.com/longxi-go/gosr/pkg/ioc"
+
+type Numbers []int
+
+type OptionalInt = gs.Optional[int]
+
+type AllInts = []int
+
+type DeferredInt = gs.Provider[int]
+
+// +ioc:bean
+// +ioc:primary
+func One() int {
+	return 1
+}
+
+// +ioc:bean
+func Two() int {
+	return 2
+}
+
+// +ioc:bean
+func NamedSlice() Numbers {
+	return Numbers{
+		7,
+		8,
+	}
+}
+
+// +ioc:bean
+func Slice() []int {
+	return []int{9}
+}
+
+// +ioc:bean
+func Map() map[string]int {
+	return map[string]int{"x": 3}
+}
+
+// +ioc:bean
+func Array() [2]int {
+	return [2]int{4, 5}
+}
+
+// +ioc:component
+type Consumer struct {
+	// +ioc:inject
+	One int
+	// +ioc:inject
+	Optional OptionalInt
+	// +ioc:inject
+	All AllInts
+	// +ioc:inject
+	Deferred DeferredInt
+	// +ioc:inject
+	DeferredOptional gs.Provider[gs.Optional[int]]
+	// +ioc:inject
+	DeferredAll gs.Provider[[]int]
+	// +ioc:inject
+	Named Numbers
+	// +ioc:inject
+	Map map[string]int
+	// +ioc:inject
+	Array [2]int
+}
+
+type ConstructorConsumer struct {
+	Value Consumer
+}
+
+// +ioc:bean
+func Construct(one int, optional OptionalInt, all AllInts, deferred DeferredInt,
+	deferredOptional gs.Provider[gs.Optional[int]], deferredAll gs.Provider[[]int],
+	named Numbers, m map[string]int, array [2]int,
+) ConstructorConsumer {
+	return ConstructorConsumer{
+		Value: Consumer{
+			One:              one,
+			Optional:         optional,
+			All:              all,
+			Deferred:         deferred,
+			DeferredOptional: deferredOptional,
+			DeferredAll:      deferredAll,
+			Named:            named,
+			Map:              m,
+			Array:            array,
+		},
+	}
+}
+
+// +ioc:component
+type Dependency struct{}
+
+// +ioc:component
+type Client struct {
+	// +ioc:inject
+	Dependency  *Dependency
+	Constructed bool
+}
+
+// +ioc:bean
+func NewClient() *Client {
+	return &Client{
+		Constructed: true,
+	}
+}
+
+func main() {}

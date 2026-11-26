@@ -1,0 +1,27 @@
+package main
+
+// +ioc:bean
+// +ioc:conditional:on-property:name=storage,havingValue="memory"
+func Memory() uint8 {
+	return 1
+}
+
+// +ioc:bean
+// +ioc:conditional:on-property:name=empty,havingValue=""
+func Empty() uint16 {
+	return 2
+}
+
+// +ioc:bean
+// +ioc:conditional:on-property:name=value,havingValue="a=b"
+func EqualityInValue() uint32 {
+	return 3
+}
+
+// +ioc:bean
+// +ioc:conditional:on-property:name=enabled,havingValue="false"
+func Disabled() uint64 {
+	return 4
+}
+
+func main() {}

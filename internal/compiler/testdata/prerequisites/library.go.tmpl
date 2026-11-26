@@ -1,0 +1,27 @@
+package library
+
+import "context"
+
+var Calls []string
+
+type Migration struct{}
+
+func (*Migration) Init(context.Context) error {
+	Calls = append(Calls, "migration init")
+	return nil
+}
+
+// +ioc:bean:name=migration
+// +ioc:lazy
+func newMigration() *Migration {
+	return &Migration{}
+}
+
+type Repository struct{}
+
+// +ioc:bean
+// +ioc:depends-on=migration
+func newRepository() *Repository {
+	Calls = append(Calls, "repository factory")
+	return &Repository{}
+}

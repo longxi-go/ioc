@@ -1,0 +1,85 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	gs "github.com/longxi-go/gosr/pkg/ioc"
+	"github.com/longxi-go/ioc/pkg/bean"
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestNilPointerFactoriesFailWithoutOwnership(t *testing.T) {
+	initialized, destroyed = 0, 0
+	ctx := context.Background()
+	application, err := app.NewApplicationContext(context.Background(), app.WithPlan("example.org/app"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := application.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"NilResource", "FailedNilResource"} {
+		value, err := application.GetBean[*Resource](ctx, name)
+		if value != nil || !errors.Is(err, &gs.Error{
+			Code: gs.CreationFailed,
+		}) {
+			t.Errorf("%s published nil pointer: value=%v error=%v", name, value, err)
+		}
+		if name == "FailedNilResource" && !errors.Is(err, constructorFailure) {
+			t.Errorf("factory error cause lost: %v", err)
+		}
+	}
+	if initialized != 0 || destroyed != 0 {
+		t.Errorf("nil value acquired lifecycle ownership: init=%d destroy=%d", initialized, destroyed)
+	}
+	zero, err := application.GetBean[int](ctx)
+	if err != nil || zero != 0 {
+		t.Errorf("scalar zero rejected: %v %v", zero, err)
+	}
+	values, err := application.GetBean[map[string]int](ctx)
+	if err != nil || values != nil {
+		t.Errorf("nil data map rejected: %v %v", values, err)
+	}
+	if err := application.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNilPointerDecoratorRejectsReplacementAndCleansOriginal(t *testing.T) {
+	initialized, destroyed = 0, 0
+	ctx := context.Background()
+	application, err := app.NewApplicationContext(context.Background(),
+		app.WithPlan("example.org/app"),
+		app.WithDecorator(bean.Decorator{
+			Contract: "*example.org/app.Resource",
+			Wrap:     nilResourceDecorator,
+		}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := application.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	value, err := application.GetBean[*Resource](ctx, "ValidResource")
+	if value != nil || !errors.Is(err, &gs.Error{
+		Code: gs.ContractMismatch,
+	}) {
+		t.Errorf("typed nil replacement accepted: value=%v error=%v", value, err)
+	}
+	if initialized != 0 {
+		t.Errorf("invalid replacement initialized: %d", initialized)
+	}
+	if err := application.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if destroyed != 1 {
+		t.Errorf("original allocation not cleaned exactly once: %d", destroyed)
+	}
+}
+
+func nilResourceDecorator(context.Context, any) (any, error) {
+	return (*Resource)(nil), nil
+}

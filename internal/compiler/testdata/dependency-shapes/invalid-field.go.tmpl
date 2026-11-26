@@ -1,0 +1,15 @@
+package main
+
+import gs "github.com/longxi-go/gosr/pkg/ioc"
+
+type Dependency = DEPENDENCY
+
+// +ioc:component
+type Consumer struct {
+	// +ioc:inject
+	Value Dependency
+}
+
+var _ gs.Optional[int]
+
+func main() {}

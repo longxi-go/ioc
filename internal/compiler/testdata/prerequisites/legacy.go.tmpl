@@ -1,0 +1,22 @@
+package main
+
+import (
+	"github.com/longxi-go/ioc/pkg/bean"
+	"github.com/longxi-go/ioc/pkg/catalog"
+)
+
+// An old generator used the runtime ABI constant and emitted Auto on every recipe.
+// A runtime upgrade must not silently relabel this adapter as compatible.
+func init() {
+	catalog.Default().Contribute(bean.Batch{
+		ID:     "legacy",
+		Schema: bean.SchemaVersion,
+		Registrations: []bean.Registration{
+			{
+				Auto: true,
+			},
+		},
+	})
+}
+
+func main() {}

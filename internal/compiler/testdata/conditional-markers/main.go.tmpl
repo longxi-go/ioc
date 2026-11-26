@@ -1,0 +1,127 @@
+package main
+
+import (
+	ordercontracts "example.org/app/order/contracts"
+	paymentcontracts "example.org/app/payment/contracts"
+)
+
+var _ paymentcontracts.Repository
+
+type repository struct{}
+
+func (repository) Name() string {
+	return "orders"
+}
+
+// +ioc:bean
+func Orders() ordercontracts.Repository {
+	return repository{}
+}
+
+// +ioc:bean:name=anotherBean,aliases={repository}
+func Named() string {
+	return "named separately"
+}
+
+type Active struct{}
+
+// +ioc:bean
+// +ioc:conditional:on-bean:type=ordercontracts.Repository,name=repository
+func IndependentRequirements() Active {
+	return Active{}
+}
+
+// +ioc:bean
+// +ioc:conditional:on-bean:type=ordercontracts.Repository
+// +ioc:conditional:on-bean:name=absent
+func RepeatedAnd() bool {
+	return false
+}
+
+// +ioc:bean
+// +ioc:conditional:on-missing-bean:type=ordercontracts.Repository,name=absent
+func MissingTypePresent() byte {
+	return 0
+}
+
+// +ioc:bean
+// +ioc:conditional:on-missing-bean:type=paymentcontracts.Repository,name=repository
+func MissingNamePresent() rune {
+	return 0
+}
+
+// +ioc:bean
+// +ioc:conditional:on-missing-bean:type=paymentcontracts.Repository,name=absent
+func BothMissing() int {
+	return 1
+}
+
+// +ioc:bean
+// +ioc:conditional:on-missing-bean:name=absent
+func NameOnly() string {
+	return "no implicit result-type predicate"
+}
+
+type Default struct{}
+
+// +ioc:bean
+func UserDefault() Default {
+	return Default{}
+}
+
+// +ioc:bean
+// +ioc:conditional:on-missing-bean
+func Fallback() Default {
+	return Default{}
+}
+
+type Presence struct{}
+
+// +ioc:bean
+func UserPresence() Presence {
+	return Presence{}
+}
+
+// +ioc:bean
+// +ioc:conditional:on-bean
+func InferredPresent() Presence {
+	return Presence{}
+}
+
+// +ioc:component
+// +ioc:conditional:on-missing-bean
+type OnlyDefault struct{}
+
+// +ioc:component
+// +ioc:conditional:on-bean
+type NeedsFactory struct{}
+
+// +ioc:bean
+func NewNeedsFactory() *NeedsFactory {
+	return &NeedsFactory{}
+}
+
+type Entries[T any] = map[string]T
+
+type Phantom[T any] = int
+
+// +ioc:bean
+func MapValue() Entries[int] {
+	return Entries[int]{
+		"value": 1,
+	}
+}
+
+// +ioc:bean
+// +ioc:conditional:on-bean:type="Entries[int]"
+func GenericAliasWorks() int16 {
+	return 1
+}
+
+// +ioc:bean
+// +ioc:conditional:on-bean:type="Phantom[int]"
+func PhantomInstanceWorks() uint16 {
+	return 1
+}
+
+func main() {}

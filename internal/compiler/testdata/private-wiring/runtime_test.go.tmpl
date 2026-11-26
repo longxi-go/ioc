@@ -1,0 +1,47 @@
+package main
+
+import (
+	"context"
+	"testing"
+
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestWiring(t *testing.T) {
+	ctx := context.Background()
+	application, err := app.NewApplicationContext(context.Background(), app.WithPlan("example.org/app"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := application.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := application.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	consumer, err := application.GetBean[*Consumer](ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !consumer.initialized || consumer.port.Value() != "wired" {
+		t.Fatal("private injection/lifecycle missing")
+	}
+	value, err := consumer.deferred(ctx)
+	if err != nil || !value.Present || value.Value.Value() != "wired" {
+		t.Fatal("nested provider", value, err)
+	}
+	all, err := application.GetBeans[Port](ctx)
+	if err != nil || len(all) != 1 {
+		t.Fatal(all, err)
+	}
+	slice, err := application.GetBean[[]int](ctx)
+	if err != nil || len(slice) != 2 || slice[0] != 7 {
+		t.Fatal("slice bean", slice, err)
+	}
+	integers, err := application.GetBeans[int](ctx)
+	if err != nil || len(integers) != 1 || integers[0] != 42 {
+		t.Fatal("collection query", integers, err)
+	}
+}

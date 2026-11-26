@@ -1,0 +1,39 @@
+{{define "strings"}}{{if .}}[]string{
+{{range .}}    {{printf "%q" .}},
+{{end}}}{{else}}[]string{}{{end}}{{end}}
+
+{{define "source"}}gs.Source{
+    Package: {{printf "%q" .Package}},
+    File: {{printf "%q" .File}},
+    Line: {{.Line}},
+}{{end}}
+
+{{define "selector"}}gs.Selector{
+    Contract: {{printf "%q" .Contract}},
+    Name: {{printf "%q" .Name}},
+    Qualifiers: {{template "strings" .Qualifiers}},
+}{{end}}
+
+{{define "definition"}}gs.BeanDefinition{
+    ID: {{printf "%q" .ID}},
+    Name: {{printf "%q" .Name}},
+    Aliases: {{template "strings" .Aliases}},
+    Qualifiers: {{template "strings" .Qualifiers}},
+    Contracts: []gs.Contract{
+{{range .Contracts}}        {{printf "%q" .}},
+{{end}}    },
+    Dependencies: []gs.Dependency{
+{{range .Dependencies}}        {
+            Selector: {{template "selector" .Selector}},
+            Access: {{iocAccess .Access}},
+            Cardinality: {{iocCardinality .Cardinality}},
+            Source: {{template "source" .Source}},
+        },
+{{end}}    },
+    DependsOn: {{template "strings" .DependsOn}},
+    Scope: {{iocScope .Scope}},
+    Primary: {{.Primary}},
+    Lazy: {{.Lazy}},
+    Order: {{.Order}},
+    Source: {{template "source" .Source}},
+}{{end}}

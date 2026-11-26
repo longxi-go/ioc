@@ -1,0 +1,14 @@
+package main
+
+import "context"
+
+// +ioc:component
+// RECIPE_SUPPLEMENT
+type Service struct{}
+
+func (*Service) Start(context.Context) error {
+	return nil
+}
+
+func main() {
+}

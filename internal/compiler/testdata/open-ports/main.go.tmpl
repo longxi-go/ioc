@@ -1,0 +1,11 @@
+package main
+
+import "database/sql"
+
+// +ioc:bean
+func Database() *sql.DB {
+	return &sql.DB{}
+}
+
+func main() {
+}

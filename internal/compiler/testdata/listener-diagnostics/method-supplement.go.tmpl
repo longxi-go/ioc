@@ -1,0 +1,25 @@
+package main
+
+import (
+	"context"
+
+	"github.com/longxi-go/gosr/pkg/event"
+)
+
+type E struct {
+	event.BaseEvent
+}
+
+var _ context.Context
+
+// +ioc:component
+type A struct{}
+
+// +ioc:listen
+// +ioc:scope=singleton
+func (*A) Observe(context.Context, E) error {
+	return nil
+}
+
+func main() {
+}

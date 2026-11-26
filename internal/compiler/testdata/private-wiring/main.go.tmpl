@@ -1,0 +1,46 @@
+package main
+
+import (
+	"context"
+
+	gs "github.com/longxi-go/gosr/pkg/ioc"
+)
+
+type Port interface {
+	Value() string
+}
+
+// +ioc:component
+// +ioc:expose=Port
+type Service struct{}
+
+func (*Service) Value() string {
+	return "wired"
+}
+
+// +ioc:component
+type Consumer struct {
+	// +ioc:inject
+	port Port
+	// +ioc:inject
+	deferred    gs.Provider[gs.Optional[Port]]
+	initialized bool
+}
+
+func (c *Consumer) Init(context.Context) error {
+	c.initialized = true
+	return nil
+}
+
+// +ioc:bean
+func NewSlice() []int {
+	return []int{7, 8}
+}
+
+// +ioc:bean
+func NewInt() int {
+	return 42
+}
+
+func main() {
+}

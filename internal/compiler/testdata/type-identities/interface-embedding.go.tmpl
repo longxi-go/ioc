@@ -1,0 +1,28 @@
+package main
+
+type Port interface {
+	M()
+}
+
+type Concrete struct{}
+
+func (Concrete) M() {
+}
+
+// +ioc:bean
+func New() interface {
+	Port
+} {
+	return Concrete{}
+}
+
+// +ioc:bean
+func Use(interface {
+	M()
+},
+) int {
+	return 0
+}
+
+func main() {
+}

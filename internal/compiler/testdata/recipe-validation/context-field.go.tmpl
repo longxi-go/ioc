@@ -1,0 +1,12 @@
+package main
+
+import "context"
+
+// +ioc:component
+type Service struct {
+	// +ioc:inject
+	operation context.Context
+}
+
+func main() {
+}

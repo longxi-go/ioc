@@ -1,0 +1,21 @@
+package main
+
+// +ioc:bean:name=readDB
+func Read() string {
+	return "read"
+}
+
+// +ioc:bean:name=writeDB
+func Write() string {
+	return "write"
+}
+
+// +ioc:bean
+// +ioc:param:parameter=read,name=readDB
+// +ioc:param:parameter=write,name=writeDB
+func Pair(read, write string) [2]string {
+	return [2]string{read, write}
+}
+
+func main() {
+}

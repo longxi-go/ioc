@@ -1,0 +1,21 @@
+package main
+
+type Generic[T any] struct {
+	Value T
+}
+
+type SliceAlias[T any] = []T
+
+type NamedAlias[T any] = Generic[T]
+
+type FunctionAlias[T any] = func(T)
+
+type Phantom[T any] = int
+
+// +ioc:bean
+// TYPE_MARKER
+func Value() int {
+	return 1
+}
+
+func main() {}

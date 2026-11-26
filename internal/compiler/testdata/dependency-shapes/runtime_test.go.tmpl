@@ -1,0 +1,72 @@
+package main
+
+import (
+	"context"
+	"reflect"
+	"testing"
+
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestSixShapesAndExactContracts(t *testing.T) {
+	ctx := context.Background()
+	a, err := app.NewApplicationContext(context.Background(), app.WithPlan("example.org/app"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	component, err := a.GetBean[*Consumer](ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	constructed, err := a.GetBean[ConstructorConsumer](ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []*Consumer{component, &constructed.Value} {
+		if c.One != 1 || !c.Optional.Present || c.Optional.Value != 1 || !reflect.DeepEqual(c.All, []int{1, 2}) {
+			t.Fatal("direct shapes", c)
+		}
+		one, err := c.Deferred(ctx)
+		if err != nil || one != 1 {
+			t.Fatal(one, err)
+		}
+		optional, err := c.DeferredOptional(ctx)
+		if err != nil || !optional.Present || optional.Value != 1 {
+			t.Fatal(optional, err)
+		}
+		all, err := c.DeferredAll(ctx)
+		if err != nil || !reflect.DeepEqual(all, []int{1, 2}) {
+			t.Fatal(all, err)
+		}
+		if !reflect.DeepEqual(c.Named, Numbers{
+			7,
+			8,
+		}) || c.Map["x"] != 3 || c.Array != [2]int{4, 5} {
+			t.Fatal("exact collection contracts", c)
+		}
+	}
+	slice, err := a.GetBean[[]int](ctx)
+	if err != nil || !reflect.DeepEqual(slice, []int{9}) {
+		t.Fatal("exact slice lookup", slice, err)
+	}
+	all, err := a.GetBeans[int](ctx)
+	if err != nil || !reflect.DeepEqual(all, []int{1, 2}) {
+		t.Fatal("aggregate lookup", all, err)
+	}
+	componentClient, err := a.GetBean[*Client](ctx, "Client")
+	if err != nil || componentClient.Dependency == nil || componentClient.Constructed {
+		t.Fatal("component field injection", componentClient, err)
+	}
+	factoryClient, err := a.GetBean[*Client](ctx, "NewClient")
+	if err != nil || factoryClient.Dependency != nil || !factoryClient.Constructed {
+		t.Fatal("factory owns returned fields", factoryClient, err)
+	}
+}

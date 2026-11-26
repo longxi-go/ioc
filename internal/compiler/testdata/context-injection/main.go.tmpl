@@ -1,0 +1,11 @@
+package main
+
+import "context"
+
+// +ioc:bean
+func ContextAvailable(ctx context.Context) bool {
+	return ctx != nil && ctx.Err() == nil
+}
+
+func main() {
+}

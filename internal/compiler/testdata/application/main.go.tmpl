@@ -1,0 +1,37 @@
+package main
+
+import (
+	"context"
+
+	gs "github.com/longxi-go/gosr/pkg/ioc"
+)
+
+type Port interface {
+	Value() string
+}
+
+// +ioc:component
+// +ioc:primary
+// +ioc:expose=Port
+type Service struct{}
+
+func (*Service) Value() string {
+	return "ok"
+}
+
+// +ioc:component
+type Consumer struct {
+	// +ioc:inject
+	port Port
+	// +ioc:inject
+	maybe gs.Optional[Port]
+	// +ioc:inject
+	later gs.Provider[[]Port]
+}
+
+func (*Consumer) Init(context.Context) error {
+	return nil
+}
+
+func main() {
+}

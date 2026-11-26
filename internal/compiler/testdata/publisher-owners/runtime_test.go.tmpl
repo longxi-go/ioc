@@ -1,0 +1,42 @@
+package main
+
+import (
+	"context"
+	"testing"
+
+	"github.com/longxi-go/gosr/pkg/event"
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestOwners(t *testing.T) {
+	ctx := context.Background()
+	a, err := app.NewApplicationContext(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	service, err := a.GetBean[*Service](ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := service.Publisher.PublishEvent(ctx, E{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"First", "Second"} {
+		audit, err := a.GetBean[*Audit](ctx, name)
+		if err != nil || audit.Calls != 1 {
+			t.Fatal(name, audit, err)
+		}
+	}
+	publisher, err := a.GetBean[event.Publisher](ctx)
+	if err != nil || publisher != service.Publisher {
+		t.Fatal("default Publisher", publisher, err)
+	}
+}

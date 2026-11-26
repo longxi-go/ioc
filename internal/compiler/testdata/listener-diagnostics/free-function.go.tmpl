@@ -1,0 +1,21 @@
+package main
+
+import (
+	"context"
+
+	"github.com/longxi-go/gosr/pkg/event"
+)
+
+type E struct {
+	event.BaseEvent
+}
+
+var _ context.Context
+
+// +ioc:listen
+func Observe(context.Context, E) error {
+	return nil
+}
+
+func main() {
+}

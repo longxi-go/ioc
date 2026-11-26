@@ -1,0 +1,13 @@
+package library
+
+type Public interface {
+	Value() string
+}
+
+// +ioc:component
+// +ioc:expose=Public
+type privateService struct{}
+
+func (*privateService) Value() string {
+	return "private"
+}

@@ -1,0 +1,17 @@
+package main
+
+import lib "example.org/library"
+
+// +ioc:component
+// +ioc:primary
+// +ioc:expose=lib.Port
+type Override struct{}
+
+func (*Override) Value() string {
+	return "override"
+}
+
+var _ lib.Port = (*Override)(nil)
+
+func main() {
+}

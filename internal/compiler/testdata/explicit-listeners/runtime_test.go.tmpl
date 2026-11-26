@@ -1,0 +1,39 @@
+package main
+
+import (
+	"context"
+	"testing"
+
+	app "github.com/longxi-go/ioc/pkg/context"
+)
+
+func TestEvents(t *testing.T) {
+	ctx := context.Background()
+	a, err := app.NewApplicationContext(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	if err := a.PublishEvent(ctx, Placed{}); err != nil {
+		t.Fatal(err)
+	}
+	audit, err := a.GetBean[*Audit](ctx, "audit")
+	if err != nil || audit.Calls != 1 {
+		t.Fatal("dedup", audit, err)
+	}
+	notices, err := a.GetBean[*Notices](ctx)
+	if err != nil || notices.Calls != 1 {
+		t.Fatal("private", notices, err)
+	}
+	ordinary, err := a.GetBean[*Ordinary](ctx)
+	if err != nil || ordinary.Calls != 0 {
+		t.Fatal("implicit subscription", ordinary, err)
+	}
+}
