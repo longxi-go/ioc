@@ -35,7 +35,7 @@ type Application struct {
 	statistics *Statistics
 }
 
-// New starts the graph before publishing a router and compensates failed startup.
+// New starts managed dependencies before registering routes and closes the graph on startup failure.
 func New(ctx context.Context, report ErrorHandlerFunc) (_ *Application, err error) {
 	if report == nil {
 		return nil, errNilErrorHandler

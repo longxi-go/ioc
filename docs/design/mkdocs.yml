@@ -6,6 +6,12 @@ repo_name: longxi-go/ioc
 repo_url: https://github.com/longxi-go/ioc
 copyright: Copyright &copy; 2026 - present The longxi-go/ioc Authors
 
+watch:
+  - ../../examples/gin/README.md
+  - ../../examples/gin/README.zh_CN.md
+  - ../../examples/coffee/docs/integration.md
+  - ../../examples/coffee/docs/integration.zh_CN.md
+
 validation:
   links:
     anchors: warn
@@ -67,6 +73,10 @@ plugins:
                 - 快速开始: quick-start.md
                 - 注解参考: annotations.md
                 - Environment: environment.md
+            - 示例:
+                - 示例索引: examples/index.md
+                - Gin 请求作用域: examples/gin.md
+                - Coffee MVC 应用: examples/coffee.md
             - 项目维护:
                 - 架构: architecture.md
                 - 事件: events.md
@@ -95,6 +105,10 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets:
+      base_path:
+        - !relative $config_dir/../..
+      check_paths: true
   - pymdownx.tabbed:
       alternate_style: true
 
@@ -110,6 +124,10 @@ nav:
       - Quick Start: quick-start.md
       - Annotation Reference: annotations.md
       - Environment: environment.md
+  - Examples:
+      - Example Index: examples/index.md
+      - Gin Request Scopes: examples/gin.md
+      - Coffee MVC Application: examples/coffee.md
   - Project:
       - Architecture: architecture.md
       - Events: events.md

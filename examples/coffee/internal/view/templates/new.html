@@ -1,0 +1,34 @@
+{{template "header" .}}
+<section class="heading">
+  <p class="eyebrow">PLACE AN ORDER</p>
+  <h1>What would you like?</h1>
+  <p class="muted">Choose a coffee. You can edit the order before preparation begins.</p>
+</section>
+<div class="columns">
+  <form class="panel form" action="/orders" method="post">
+    <label>
+      Customer name
+      <input name="customer" required maxlength="80" autocomplete="name">
+    </label>
+    <label>
+      Coffee
+      <select name="coffee">
+        {{range .Menu}}
+        <option value="{{.Code}}">{{.Name}} · {{money .Price}}</option>
+        {{end}}
+      </select>
+    </label>
+    <label>
+      Quantity
+      <input name="quantity" type="number" min="1" max="100" value="1" required>
+    </label>
+    <button type="submit">Place order</button>
+  </form>
+  <aside class="panel menu">
+    <h2>Menu</h2>
+    {{range .Menu}}
+    <p>{{.Name}} <strong>{{money .Price}}</strong></p>
+    {{end}}
+  </aside>
+</div>
+{{template "footer" .}}

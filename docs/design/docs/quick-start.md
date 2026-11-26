@@ -74,9 +74,9 @@ ioctl check --entry . --roots .
 ```
 
 Output: `hello from generated IoC`. Generation creates ordinary Go source, including
-same-package construction and an application query plan. Keep generated files
-with your source; `go build` does not run generation. `check` compares expected
-output without rewriting files. Rerun generation when annotations, dependencies,
+same-package construction and an application query plan. Retain generated files
+alongside application source; `go build` does not run generation. `check` compares
+expected output without rewriting files. Rerun generation when annotations, dependencies,
 entry roots or build constraints change.
 
 The deferred Close also runs after failed startup and joins cleanup errors with
@@ -124,7 +124,7 @@ make check-generated
 The CLI is `.tmp/bin/ioctl`. The hello example prints
 `hello from static IoC (request-1)` and covers interface/private-field injection,
 resources and scopes. The event example prints `audit order-42`, then
-`notify order-42`. Both include executable tests and full lifecycle handling.
+`notify order-42`. Both include executable tests and explicit startup and cleanup.
 Read [hello](https://github.com/longxi-go/ioc/tree/main/examples/hello) and
 [events](https://github.com/longxi-go/ioc/tree/main/examples/events).
 
@@ -137,9 +137,9 @@ ioctl explain --entry ./cmd/server --roots ./app/...
 ioctl graph --entry ./cmd/server --roots ./app/...
 ```
 
-These paths assume your project contains `cmd/server` and `app`. `explain` outputs
-candidate definitions as JSON; `graph` outputs potential dependency and ordering
-edges as JSON, including conditional alternatives. Neither writes source.
+These commands use `cmd/server` as the entry and `app/...` as the generation roots.
+`explain` outputs candidate definitions as JSON; `graph` outputs potential dependency
+and ordering edges as JSON, including conditional alternatives. Neither writes source.
 
 `codegen.Edge.Kind` uses `codegen.EdgeKind`:
 

@@ -114,7 +114,7 @@ make check-generated
 
 CLI 位于 `.tmp/bin/ioctl`。hello 示例输出 `hello from static IoC (request-1)`，
 涵盖接口/私有字段注入、资源和作用域。事件示例依次输出 `audit order-42` 和
-`notify order-42`。二者都包含可执行测试和完整生命周期处理。源码见
+`notify order-42`。二者都包含可执行测试，并显式执行启动与清理。源码见
 [hello](https://github.com/longxi-go/ioc/tree/main/examples/hello) 与
 [events](https://github.com/longxi-go/ioc/tree/main/examples/events)。
 
@@ -127,7 +127,8 @@ ioctl explain --entry ./cmd/server --roots ./app/...
 ioctl graph --entry ./cmd/server --roots ./app/...
 ```
 
-这些路径假定项目包含 `cmd/server` 和 `app`。`explain` 输出候选定义 JSON；
+这些命令使用 `cmd/server` 作为入口，`app/...` 作为生成根。
+`explain` 输出候选定义 JSON；
 `graph` 输出潜在依赖和排序边的 JSON，包括条件分支。两者都不写源码。
 
 `codegen.Edge.Kind` 的类型为 `codegen.EdgeKind`：

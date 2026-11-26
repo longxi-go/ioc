@@ -27,14 +27,21 @@ flowchart TD
 | 事件 | 类型化同步监听器、实例排序和生命周期屏障 |
 | 库 | 库发布适配代码、索引和元数据，应用生成装配计划 |
 
-共享契约属于 [gosr](https://github.com/longxi-go/gosr)。
+共享契约由 [gosr](https://github.com/longxi-go/gosr) 定义。
 [架构](architecture.md) 说明包边界、候选选择、所有权、并发构造和发布。
 [事件指南](events.md) 区分事件排序和 Bean 排序。
+
+## 应用示例
+
+[示例索引](examples/index.md) 按容器基础、HTTP 集成和完整应用组织源码。
+[Gin 请求作用域](examples/gin.md) 说明路由与受管 Bean 的连接方式；
+[Coffee MVC](examples/coffee.md) 展示 Nemo 配置绑定、仓储与 Service 注入、
+HTML/REST Controller、按条件启用的监听器及资源关闭流程。
 
 ## 支持边界与兼容性
 
 容器支持静态已知的图，并在启动时依据配置选择候选。不提供运行时源码发现、
-动态图刷新、自动配置重绑定、Web 集成、提前暴露循环对象或任意方法拦截。
+动态图刷新、自动配置重绑定、内置 Web 框架适配器、提前暴露循环对象或任意方法拦截。
 
 公开 API 使用模块版本。0.x 版本可能在次版本升级时调整 API；请固定依赖，升级前
 审阅变化。生成的 Bean 注册项具有独立的 schema/ABI，与模块版本分别检查。应配套

@@ -20,13 +20,12 @@
 
 `make test-scripts` 运行隔离单元测试，包括使用真实 Go 的模块解析、缺失校验记录和
 持久标志回归。受控子进程/API 响应覆盖发布恢复、HTTP 错误、Pages 策略、说明冲突和
-移动的标签。这些测试不会发布内容，也不能证明托管 Actions 和 Pages 设置正确。
+移动的标签，不发布 Release 或修改 Pages 设置。
 `make test-format` 验证实际的共享格式化器。
 
 ## 发布准备与恢复
 
 1. 在 `docs/releases/vX.Y.Z.md` 维护英文说明，标题必须为 `# ioc vX.Y.Z`。
-   初始说明为 `docs/releases/v0.1.0.md`。
 2. 运行 `make check`、`make docs-build` 和 `make validate-release TAG=vX.Y.Z`。
 3. 运行 `make preflight-release TAG=vX.Y.Z`。它读取上游稳定 Release，检查模块整洁性、
    校验记录、Pages Actions 模式，以及 `github-pages` 是否允许该标签部署。

@@ -1,0 +1,26 @@
+{{define "header"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{.Title}} · Coffee</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">COFFEE / COUNTER</a>
+    <a class="button" href="/orders/new">New order</a>
+  </header>
+  <main>
+{{end}}
+
+{{define "footer"}}
+  </main>
+  <footer>
+    Order · Prepare · Collect
+    <span>Prices in USD</span>
+  </footer>
+</body>
+</html>
+{{end}}

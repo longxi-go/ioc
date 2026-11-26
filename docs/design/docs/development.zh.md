@@ -69,6 +69,12 @@ Mermaid 脚本；渲染需要访问该脚本 CDN。双语图表应保持含义�
 生成 SVG，确认无语法错误、标签裁切，明暗配色均可读。Markdown 构建成功本身
 不能验证图表渲染。
 
+Gin 与 Coffee 站点页通过本地 Markdown 片段包含示例正文。分别修改
+`examples/gin/README[.zh_CN].md` 和
+`examples/coffee/docs/integration[.zh_CN].md` 中的 `*-manual` 区域；仓库文件与
+站点包装页各自定义相对链接，正文无需复制。包含路径相对于 MkDocs 配置定位，
+文件或区域缺失时构建失败。新增引用时同步维护两种阅读位置的链接定义。
+
 ## 发布与在线文档
 
 发布工具在正式发布前验证版本/tag、依赖、质量结果和已发布源码。Release 工作流在

@@ -1,0 +1,49 @@
+{{template "header" .}}
+<section class="heading">
+  <p class="eyebrow">THE COUNTER</p>
+  <h1>Orders</h1>
+  <p class="muted">Orders: {{.Total}}. Follow each coffee from order to pickup.</p>
+</section>
+<nav class="filters" aria-label="Order status">
+  <a href="/">All</a>
+  <a href="/?status=placed">Placed</a>
+  <a href="/?status=preparing">Preparing</a>
+  <a href="/?status=ready">Ready</a>
+  <a href="/?status=collected">Collected</a>
+  <a href="/?status=cancelled">Cancelled</a>
+</nav>
+<div class="panel scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Order</th>
+        <th>Customer</th>
+        <th>Coffee</th>
+        <th>Total</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Orders}}
+      <tr>
+        <td><a href="/orders/{{.ID}}">#{{.ID}}</a></td>
+        <td>{{.Customer}}</td>
+        <td>{{.Coffee}} × {{.Quantity}}</td>
+        <td>{{money .Total}}</td>
+        <td><span class="status {{.Status}}">{{.Status}}</span></td>
+      </tr>
+      {{else}}
+      <tr>
+        <td colspan="5" class="empty">
+          No orders in this view. <a href="/orders/new">Place an order</a>.
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+<nav class="pagination">
+  {{if .Previous}}<a href="{{.Previous}}">← Previous</a>{{end}}
+  {{if .Next}}<a href="{{.Next}}">Next →</a>{{end}}
+</nav>
+{{template "footer" .}}

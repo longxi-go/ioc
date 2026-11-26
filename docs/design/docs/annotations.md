@@ -14,8 +14,8 @@ those registration markers. A field supplement needs `+ioc:inject`. A
 
 ## Syntax, targets and defaults
 
-The table lists every registered marker. “Repeat” means multiple marker lines on
-one target; it does not permit duplicate values where uniqueness is required.
+“Repeat” means multiple marker lines on one target; it does not permit duplicate
+values where uniqueness is required.
 Names and identifiers cannot be blank. Quote values containing marker punctuation,
 for example `+ioc:expose="map[string]int"`. Property conditions allow an explicit
 empty `havingValue`, as specified below.

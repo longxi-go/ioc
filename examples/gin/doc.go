@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main verifies generated IoC composition with a Gin router. Singletons
-// hold request Providers; middleware opens one explicit lifetime per HTTP call
-// and reports cleanup failures without rewriting completed responses. These
-// verification examples do not define a production Gin adapter API.
+// Package main assembles a Gin handler with generated IoC dependencies.
+// Middleware owns each explicit Request scope; singleton Providers resolve
+// request Beans using the operation Context. The executable dispatches one
+// in-process HTTP request and closes the application after handling it.
 package main

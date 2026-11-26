@@ -24,13 +24,13 @@ rewriting `go.mod` or `go.sum`. There is no sibling repository requirement.
 `make test-scripts` runs isolated unit tests, including real Go module parsing,
 missing-checksum and persistent-flag regressions. Controlled subprocess/API
 responses exercise release recovery, HTTP errors, Pages policies, conflicting
-notes and moved tags. These tests do not publish anything or prove hosted Actions
-and Pages settings. `make test-format` exercises the actual shared formatter.
+notes and moved tags without publishing Releases or changing Pages settings.
+`make test-format` exercises the actual shared formatter.
 
 ## Release preparation and recovery
 
 1. Maintain English notes in `docs/releases/vX.Y.Z.md` with a matching
-   `# ioc vX.Y.Z` title. The initial notes are `docs/releases/v0.1.0.md`.
+   `# ioc vX.Y.Z` title.
 2. Run `make check`, `make docs-build` and `make validate-release TAG=vX.Y.Z`.
 3. Run `make preflight-release TAG=vX.Y.Z`. It reads upstream stable Releases,
    checks module tidiness and checksums, and requires Pages Actions mode plus a

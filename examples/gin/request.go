@@ -34,7 +34,7 @@ type Statistics struct {
 	destroyed atomic.Int64
 }
 
-// Request owns only immutable request metadata, never a Gin or operation Context.
+// Request stores tenant metadata and resource counters without retaining an operation Context.
 type Request struct {
 	ID         int64
 	Tenant     string
@@ -59,7 +59,7 @@ func NewRequest(ctx context.Context, statistics *Statistics) (*Request, error) {
 	}, nil
 }
 
-// Destroy demonstrates cleanup independent of HTTP request cancellation.
+// Destroy records release when the owning scope closes, including cancelled requests.
 func (r *Request) Destroy(context.Context) error {
 	r.statistics.destroyed.Add(1)
 	return nil

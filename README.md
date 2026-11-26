@@ -1,6 +1,6 @@
 # ioc
 
-[English](README.md) | [简体中文](README.zh_CN.md)
+[English](README.md) | [简体中文](README.zh_CN.md) | [Online manual](https://longxi-go.github.io/ioc/)
 
 ioc generates dependency injection and lifecycle calls from annotations in Go
 comments. The `ioctl` compiler analyzes Go types and generates construction,
@@ -50,6 +50,18 @@ creating instances. Each application context manages its own instances; call
 `Start` and close the context on every exit path. Constructors, Init and Start
 receive the current operation's Context. Stop and Destroy use the container's
 cleanup Context. Do not retain callback contexts; Context fields cannot be injected.
+
+## Application examples
+
+| Example | Coverage | Guide |
+| --- | --- | --- |
+| [Gin integration](examples/gin/) | Minimal router assembly, request Provider and scope cleanup | [Gin request scopes](examples/gin/README.md) |
+| [Coffee MVC](examples/coffee/) | Nemo binding, SQLite, HTML/REST, conditional Beans and events | [Coffee application integration](examples/coffee/docs/integration.md) |
+
+Both are independent modules. Run `make run` and `make check` in their respective
+directories. The [example index](docs/design/docs/examples/index.md) lists all applications.
+
+## Container capabilities
 
 The [quick start](docs/design/docs/quick-start.md) builds a complete application.
 The [annotation reference](docs/design/docs/annotations.md) covers all markers,
@@ -108,7 +120,7 @@ them without a handwritten runtime module list:
 .tmp/bin/ioctl graph --entry ./cmd/server --roots ./app/...
 ```
 
-These paths assume your application contains `cmd/server` and `app`.
+These commands use `cmd/server` as the entry and `app/...` as the generation roots.
 `check`, `explain` and `graph` do not write source. Dependency caches, vendor and
 foreign replacement modules remain read-only. Consumer source/type compatibility
 is checked; compatible portable libraries may be reused across build environments.
@@ -118,7 +130,7 @@ incompatible variants require regeneration. See
 ownership and compatibility rules, and [events](docs/design/docs/events.md) for
 delivery and ordering.
 
-Dynamic graph refresh, automatic configuration rebinding, Web integration,
+Dynamic graph refresh, automatic configuration rebinding, built-in Web framework adapters,
 early-exposed circular objects and arbitrary method interception are outside the
 current container. Public APIs use the module version. Generated Bean registrations
 use a separately checked schema/ABI. Upgrade the CLI and runtime together and
@@ -126,7 +138,7 @@ regenerate application/library output when that ABI changes. Version 0.x may int
 changes between minor versions; pin versions and review changes when upgrading.
 The [roadmap](docs/roadmap.md) separates current capabilities from future work.
 
-For contributors:
+## Development and verification
 
 ```sh
 make setup

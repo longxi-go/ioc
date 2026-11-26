@@ -1,0 +1,8 @@
+cafe:
+  server:
+    address: 127.0.0.1:8082
+  database:
+    path: coffee.db
+  features:
+    receipt:
+      enabled: false

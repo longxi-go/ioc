@@ -28,16 +28,24 @@ flowchart TD
 | Events | Typed synchronous listeners, instance ordering and lifecycle barriers |
 | Libraries | Library-owned adapters/index/metadata; application-owned composition |
 
-Shared contracts belong to [gosr](https://github.com/longxi-go/gosr).
+Shared contracts are defined by [gosr](https://github.com/longxi-go/gosr).
 The [architecture](architecture.md) explains package boundaries, selection,
 ownership, concurrent creation and publication. The [event guide](events.md)
 separates event ordering from Bean ordering.
+
+## Application examples
+
+The [example index](examples/index.md) covers container fundamentals, HTTP
+integration and a complete application. [Gin request scopes](examples/gin.md)
+connect router execution to managed Beans. [Coffee MVC](examples/coffee.md)
+combines Nemo binding, repository/Service injection, HTML/REST controllers,
+conditional listeners and resource shutdown.
 
 ## Supported boundaries and compatibility
 
 The container supports a statically known graph with configuration-dependent
 candidate selection at startup. It does not provide runtime source discovery,
-dynamic graph refresh, automatic configuration rebinding, Web integration,
+dynamic graph refresh, automatic configuration rebinding, built-in Web framework adapters,
 early-exposed circular objects or arbitrary method interception.
 
 Public APIs follow the module version. Version 0.x may change APIs between minor

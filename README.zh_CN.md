@@ -1,6 +1,6 @@
 # ioc
 
-[English](README.md) | [简体中文](README.zh_CN.md)
+[English](README.md) | [简体中文](README.zh_CN.md) | [在线手册](https://longxi-go.github.io/ioc/zh/)
 
 ioc 根据 Go 注释中的注解生成依赖注入与生命周期调用代码。`ioctl` 编译器分析
 Go 类型，生成构造、私有字段注入和类型化查询代码。运行时装配不依赖反射或 unsafe。
@@ -46,6 +46,18 @@ type Greeting struct {
 应用计划，不创建实例。每个应用上下文管理自己的实例；调用 `Start` 后，应在每条
 退出路径上关闭上下文。构造函数、Init 和 Start 接收当前操作的 Context，Stop 和
 Destroy 使用容器的清理 Context。不得保存回调 Context，也不能向字段注入 Context。
+
+## 应用示例
+
+| 示例 | 内容 | 使用指南 |
+| --- | --- | --- |
+| [Gin 集成](examples/gin/) | 最小路由装配、请求 Provider、作用域关闭 | [Gin 请求作用域](examples/gin/README.zh_CN.md) |
+| [Coffee MVC](examples/coffee/) | Nemo 配置绑定、SQLite、HTML/REST、条件 Bean 和事件 | [Coffee 应用集成](examples/coffee/docs/integration.zh_CN.md) |
+
+两者均为独立模块，在各自目录执行 `make run` 和 `make check`。完整示例列表见
+[示例索引](docs/design/docs/examples/index.zh.md)。
+
+## 容器能力
 
 [快速开始](docs/design/docs/quick-start.zh.md) 展示完整应用的构建过程。
 [注解参考](docs/design/docs/annotations.zh.md) 覆盖全部 Marker 的位置、
@@ -97,19 +109,20 @@ func DefaultRepository() ordercontracts.Repository {
 .tmp/bin/ioctl graph --entry ./cmd/server --roots ./app/...
 ```
 
-这些路径假定应用包含 `cmd/server` 和 `app`。`check`、`explain`、`graph` 不写源码。
+这些命令使用 `cmd/server` 作为入口，`app/...` 作为生成根。
+`check`、`explain`、`graph` 不写源码。
 依赖缓存、vendor 和外部 replace 模块保持只读。编译器检查消费方源码/类型兼容性，
 语义兼容的可移植库可在不同构建环境中复用；不兼容变体需要重新生成。
 生成、并发、所有权和兼容规则见[架构](docs/design/docs/architecture.zh.md)，
 事件投递和排序见[事件](docs/design/docs/events.zh.md)。
 
-动态图刷新、自动配置重绑定、Web 集成、提前暴露循环对象和任意方法拦截不属于
+动态图刷新、自动配置重绑定、内置 Web 框架适配器、提前暴露循环对象和任意方法拦截不属于
 当前容器。公开 API 使用模块版本；生成装配描述使用独立且受检查的 schema/ABI。
 升级时应配套使用 CLI 与运行时；ABI 变化时重新生成应用和库产物。0.x 版本可能在
 次版本升级时调整 API；请固定版本并审阅升级变化。
 [路线图](docs/roadmap.md) 区分当前能力和后续方向。
 
-贡献者可执行：
+## 开发与验证
 
 ```sh
 make setup

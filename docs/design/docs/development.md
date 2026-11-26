@@ -80,6 +80,13 @@ meaning-equivalent in both languages, inspect the rendered SVG in a browser, and
 check for syntax errors, clipped labels and readable light/dark colors. A successful
 Markdown build alone does not validate diagram rendering.
 
+The Gin and Coffee manual pages include local Markdown sections from
+`examples/gin/README[.zh_CN].md` and
+`examples/coffee/docs/integration[.zh_CN].md`. Edit their `*-manual` regions;
+repository files and site wrappers supply their own link definitions. The include
+base is relative to the MkDocs config, and missing files or regions fail the
+build. New references require definitions for both reading contexts.
+
 ## Release and hosted documentation
 
 Release tooling validates the version/tag, dependencies, quality result and

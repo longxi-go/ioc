@@ -1,0 +1,65 @@
+{{template "header" .}}
+<section class="heading">
+  <p class="eyebrow">ORDER #{{.Order.ID}}</p>
+  <h1>{{.Order.Customer}}</h1>
+  <span class="status {{.Order.Status}}">{{.Order.Status}}</span>
+</section>
+<div class="columns">
+  <section class="panel">
+    <h2>Your coffee</h2>
+    <dl>
+      <dt>Coffee</dt><dd>{{.Order.Coffee}}</dd>
+      <dt>Quantity</dt><dd>{{.Order.Quantity}}</dd>
+      <dt>Total</dt><dd>{{money .Order.Total}}</dd>
+      <dt>Version</dt><dd>{{.Order.Version}}</dd>
+    </dl>
+    <div class="actions">
+      {{range .Actions}}
+      <form action="/orders/{{$.Order.ID}}/{{.Path}}" method="post">
+        <input type="hidden" name="version" value="{{$.Order.Version}}">
+        <button type="submit">{{.Label}}</button>
+      </form>
+      {{end}}
+      {{if .CanDelete}}
+      <form action="/orders/{{.Order.ID}}/delete" method="post">
+        <input type="hidden" name="version" value="{{.Order.Version}}">
+        <button class="danger" type="submit">Delete cancelled order</button>
+      </form>
+      {{end}}
+    </div>
+  </section>
+  {{if .CanEdit}}
+  <form class="panel form" action="/orders/{{.Order.ID}}/update" method="post">
+    <h2>Edit order</h2>
+    <input type="hidden" name="version" value="{{.Order.Version}}">
+    <label>
+      Customer name
+      <input name="customer" value="{{.Order.Customer}}" required maxlength="80">
+    </label>
+    <label>
+      Coffee
+      <select name="coffee">
+        {{range .Menu}}
+        <option value="{{.Code}}" {{if eq .Code $.Order.Coffee}}selected{{end}}>
+          {{.Name}} · {{money .Price}}
+        </option>
+        {{end}}
+      </select>
+    </label>
+    <label>
+      Quantity
+      <input name="quantity" type="number" min="1" max="100" value="{{.Order.Quantity}}" required>
+    </label>
+    <button type="submit">Save changes</button>
+  </form>
+  {{else}}
+  <aside class="panel">
+    <h2>Order progress</h2>
+    <p>Placed → Preparing → Ready → Collected</p>
+    <p class="muted">
+      Order details are locked once preparation begins. A ready order can be collected once.
+    </p>
+  </aside>
+  {{end}}
+</div>
+{{template "footer" .}}
