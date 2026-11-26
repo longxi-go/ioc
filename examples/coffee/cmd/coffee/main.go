@@ -52,7 +52,7 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := application.Run(ctx, options...); err != nil {
+	if err := application.Run(ctx, IOCGinRoutes(), options...); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

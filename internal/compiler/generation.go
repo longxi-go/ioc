@@ -23,6 +23,7 @@ type generation struct {
 	target                  target
 	patterns                []string
 	overlay, outputs, owned map[string][]byte
+	bootstrapOverlay        map[string][]byte
 	models, local           []*packageModel
 	recipes                 []publishedRecipe
 	indexes                 []string

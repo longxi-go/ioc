@@ -1,0 +1,12 @@
+package main
+
+// +ioc:component
+type Service struct{}
+
+// +ioc:bean
+func New(*Service) int {
+	return 1
+}
+
+func main() {
+}

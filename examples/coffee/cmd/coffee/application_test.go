@@ -48,7 +48,7 @@ func start(t *testing.T, path string, dev, receipts bool) *application.Running {
 	if dev {
 		options = append(options, managed.WithEnvironmentOptions(nemoenv.WithProfiles("dev")))
 	}
-	app, err := application.Start(t.Context(), options...)
+	app, err := application.Start(t.Context(), IOCGinRoutes(), options...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestConditionalVariants(t *testing.T) {
 }
 
 func TestInvalidStartup(t *testing.T) {
-	_, err := application.Start(t.Context(), managed.WithProperties(map[string]string{configuration.DatabaseKey: filepath.Join(t.TempDir(), "missing", "coffee.db")}))
+	_, err := application.Start(t.Context(), IOCGinRoutes(), managed.WithProperties(map[string]string{configuration.DatabaseKey: filepath.Join(t.TempDir(), "missing", "coffee.db")}))
 	if err == nil {
 		t.Fatal("invalid database path accepted")
 	}
@@ -233,7 +233,7 @@ func TestGeneratedListenerOrderAndInterfaceDecoration(t *testing.T) {
 			trace: &trace,
 		}, nil
 	}
-	app, err := application.Start(t.Context(), managed.WithProperties(map[string]string{configuration.DatabaseKey: filepath.Join(t.TempDir(), "events.db"), configuration.ReceiptKey: "true"}),
+	app, err := application.Start(t.Context(), IOCGinRoutes(), managed.WithProperties(map[string]string{configuration.DatabaseKey: filepath.Join(t.TempDir(), "events.db"), configuration.ReceiptKey: "true"}),
 		managed.WithDecorator(bean.Decorator{
 			Contract: gs.Contract("github.com/longxi-go/ioc/examples/coffee/internal/observation.AuditSink"),
 			Wrap:     sinkWrap,
@@ -296,7 +296,7 @@ func TestStartupRollbackClosesOpenedDatabase(t *testing.T) {
 	refuse := func(_ context.Context, value any) (any, error) {
 		return value, injected
 	}
-	_, err := application.Start(t.Context(), managed.WithProperties(map[string]string{configuration.DatabaseKey: filepath.Join(t.TempDir(), "rollback.db")}),
+	_, err := application.Start(t.Context(), IOCGinRoutes(), managed.WithProperties(map[string]string{configuration.DatabaseKey: filepath.Join(t.TempDir(), "rollback.db")}),
 		managed.WithDecorator(bean.Decorator{
 			Contract: gs.Contract("*github.com/longxi-go/ioc/examples/coffee/internal/infrastructure.Database"),
 			Wrap:     capture,
@@ -310,5 +310,25 @@ func TestStartupRollbackClosesOpenedDatabase(t *testing.T) {
 	}
 	if err := opened.SQL().PingContext(t.Context()); err == nil {
 		t.Fatal("startup rollback leaked database")
+	}
+}
+
+func TestGeneratedRouteDeclarations(t *testing.T) {
+	routes := IOCGinRoutes()
+	if len(routes) != 21 {
+		t.Fatalf("generated route count=%d, want 21", len(routes))
+	}
+	seen := map[string]bool{}
+	for _, route := range routes {
+		key := route.Method + " " + route.Path
+		if seen[key] || route.Bean == "" || route.Bind == nil {
+			t.Fatalf("invalid generated route: %+v", route)
+		}
+		seen[key] = true
+	}
+	for _, key := range []string{"GET /", "GET /api/menu", "POST /api/orders", "PUT /api/orders/:id", "DELETE /api/orders/:id", "POST /orders/:id/collect"} {
+		if !seen[key] {
+			t.Errorf("missing generated mapping %s", key)
+		}
 	}
 }

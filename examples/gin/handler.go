@@ -30,17 +30,11 @@ const (
 // It must be concurrency-safe, return promptly and must not panic.
 type ErrorHandlerFunc = func(error)
 
-// Handler receives its service through generated constructor injection.
+// Handler uses an injected Service without retaining request instances.
+// +ioc:controller:name=requestHandler
 type Handler struct {
+	// +ioc:inject
 	service *Service
-}
-
-// NewHandler keeps singleton dependencies explicit without capturing a request.
-// +ioc:bean
-func NewHandler(service *Service) *Handler {
-	return &Handler{
-		service: service,
-	}
 }
 
 // Describe resolves both request IDs using the same caller's scope.
@@ -48,16 +42,15 @@ func (h *Handler) Describe(ctx context.Context) (View, error) {
 	return h.service.describe(ctx)
 }
 
-func (h *Handler) serve(report ErrorHandlerFunc) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		view, err := h.Describe(ctx.Request.Context())
-		if err != nil {
-			report(err)
-			unavailable(ctx)
-			return
-		}
-		ctx.JSON(http.StatusOK, view)
+// +ioc:http:get=/request
+func (h *Handler) serve(ctx *gin.Context) {
+	view, err := h.Describe(ctx.Request.Context())
+	if err != nil {
+		_ = ctx.Error(err)
+		unavailable(ctx)
+		return
 	}
+	ctx.JSON(http.StatusOK, view)
 }
 
 type failureResponse struct {

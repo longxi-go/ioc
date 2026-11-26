@@ -1,0 +1,240 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"net/http/httptest"
+	"strings"
+	"sync"
+	"testing"
+
+	gs "github.com/longxi-go/gosr/pkg/ioc"
+
+	"github.com/gin-gonic/gin"
+	"github.com/longxi-go/ioc/adaptors/gin/pkg/router"
+	"github.com/longxi-go/ioc/adaptors/gin/pkg/scope"
+	managed "github.com/longxi-go/ioc/pkg/context"
+	"github.com/longxi-go/nemo/pkg/environment"
+)
+
+func TestGeneratedHTTP(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx := context.Background()
+	a, err := managed.NewApplicationContext(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = a.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	routes := IOCGinRoutes()
+	if created.Load() != 0 {
+		t.Fatal("eager acquisition")
+	}
+	engine := gin.New()
+	h, err := scope.Middleware(scope.Options{
+		Manager: a,
+		OnError: func(e error) {
+			t.Error(e)
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	engine.Use(h)
+	if err = router.Register(ctx, engine, a, routes...); err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range []struct {
+		method, path string
+		code         int
+	}{
+		{
+			"GET",
+			"/api/item/",
+			200,
+		},
+		{
+			"GET",
+			"/api/item/",
+			200,
+		},
+		{
+			"GET",
+			"/api/value",
+			200,
+		},
+		{
+			"POST",
+			"/api/post",
+			201,
+		},
+		{
+			"PUT",
+			"/put",
+			202,
+		},
+		{
+			"PATCH",
+			"/patch",
+			203,
+		},
+		{
+			"DELETE",
+			"/delete",
+			204,
+		},
+		{
+			"HEAD",
+			"/head",
+			205,
+		},
+		{
+			"OPTIONS",
+			"/options",
+			206,
+		},
+		{
+			"GET",
+			"/other",
+			200,
+		},
+		{
+			"GET",
+			"/params/123",
+			200,
+		},
+		{
+			"GET",
+			"/files/a/b",
+			200,
+		},
+	} {
+		out := httptest.NewRecorder()
+		engine.ServeHTTP(out, httptest.NewRequest(r.method, r.path, nil))
+		if out.Code != r.code {
+			t.Fatalf("%s %s: %d", r.method, r.path, out.Code)
+		}
+		if r.path == "/api/item/" && out.Body.String() != "1" {
+			t.Fatal("scope reuse", out.Body.String())
+		}
+	}
+	for path, want := range map[string]string{"/other": "other", "/params/123": "123", "/files/a/b": "/a/b"} {
+		out := httptest.NewRecorder()
+		engine.ServeHTTP(out, httptest.NewRequest("GET", path, nil))
+		if out.Body.String() != want {
+			t.Fatalf("%s: %s", path, out.Body.String())
+		}
+	}
+	for method, want := range map[string]int{"TRACE": 207, "PURGE": 208} {
+		out := httptest.NewRecorder()
+		engine.ServeHTTP(out, httptest.NewRequest(method, "/"+strings.ToLower(method), nil))
+		if out.Code != want {
+			t.Fatal(method, out.Code)
+		}
+	}
+	var workers sync.WaitGroup
+	for range 12 {
+		workers.Go(func() {
+			out := httptest.NewRecorder()
+			engine.ServeHTTP(out, httptest.NewRequest("GET", "/api/item/", nil))
+			if out.Code != 200 || out.Body.String() != "1" {
+				t.Errorf("concurrent scope: %d %s", out.Code, out.Body.String())
+			}
+		})
+	}
+	workers.Wait()
+
+	if created.Load() != 16 || destroyed.Load() != 16 {
+		t.Fatal(created.Load(), destroyed.Load())
+	}
+	missing := gin.New()
+	if err = router.Register(ctx, missing, a, routes...); err != nil {
+		t.Fatal(err)
+	}
+	out := httptest.NewRecorder()
+	missing.ServeHTTP(out, httptest.NewRequest("GET", "/api/item/", nil))
+	if out.Code != 503 {
+		t.Fatal("missing request middleware", out.Code)
+	}
+}
+
+func TestActiveCollision(t *testing.T) {
+	ctx := context.Background()
+	a, err := managed.NewApplicationContext(ctx, managed.WithEnvironmentOptions(environment.WithProfiles("collision")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = a.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	if err = router.Register(ctx, gin.New(), a, IOCGinRoutes()...); err == nil {
+		t.Fatal("accepted active collision")
+	}
+}
+
+type failedFactory struct {
+	value    any
+	err      error
+	selector gs.Selector
+	ctx      context.Context
+}
+
+func (f *failedFactory) Lookup(ctx context.Context, s gs.Selector) (any, error) {
+	f.selector = s
+	f.ctx = ctx
+	return f.value, f.err
+}
+
+func (f *failedFactory) LookupAll(context.Context, gs.Selector) ([]any, error) {
+	panic("unexpected collection lookup")
+}
+
+func TestResolutionErrors(t *testing.T) {
+	for _, f := range []*failedFactory{
+		{
+			err: errors.New("lookup"),
+		},
+		{
+			value: 42,
+		},
+		{
+			value: (*controller)(nil),
+		},
+	} {
+		var route router.Route
+		for _, r := range IOCGinRoutes() {
+			if r.Path == "/api/item/" && r.Bean == "example.org/consumer.controller" {
+				route = r
+				break
+			}
+		}
+		if route.Bind == nil {
+			t.Fatal("missing controller route")
+		}
+		e := gin.New()
+		e.Use(func(c *gin.Context) {
+			c.Next()
+			if len(c.Errors) != 1 {
+				t.Error("missing Gin error")
+			}
+		})
+		e.Handle(route.Method, route.Path, route.Bind(f))
+		req := httptest.NewRequest("GET", route.Path, nil)
+		out := httptest.NewRecorder()
+		e.ServeHTTP(out, req)
+		if out.Code != 503 || f.selector.Name != "controller" || f.selector.Contract != "*example.org/consumer.controller" || f.ctx != req.Context() {
+			t.Fatal(out.Code, f.selector)
+		}
+	}
+}

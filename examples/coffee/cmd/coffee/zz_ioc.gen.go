@@ -23,8 +23,10 @@ import (
 	ioc11ba51f4d5 "github.com/longxi-go/gosr/pkg/environment"
 	iocc00980548b "github.com/longxi-go/gosr/pkg/event"
 	gs "github.com/longxi-go/gosr/pkg/ioc"
+	router "github.com/longxi-go/ioc/adaptors/gin/pkg/router"
 	iocf68d6f9523 "github.com/longxi-go/ioc/examples/coffee/internal/configuration"
 	ioc2f4f3bf335 "github.com/longxi-go/ioc/examples/coffee/internal/controller"
+	pkg0 "github.com/longxi-go/ioc/examples/coffee/internal/controller"
 	iocbadb8b3481 "github.com/longxi-go/ioc/examples/coffee/internal/infrastructure"
 	ioce4254e7977 "github.com/longxi-go/ioc/examples/coffee/internal/model"
 	iocaf03bf7c58 "github.com/longxi-go/ioc/examples/coffee/internal/observation"
@@ -34,6 +36,16 @@ import (
 	bean "github.com/longxi-go/ioc/pkg/bean"
 	catalog "github.com/longxi-go/ioc/pkg/catalog"
 )
+
+func IOCGinPackageRoutes() []router.Route {
+	return []router.Route{}
+}
+
+func IOCGinRoutes() []router.Route {
+	routes := IOCGinPackageRoutes()
+	routes = append(routes, pkg0.IOCGinPackageRoutes()...)
+	return routes
+}
 
 func init() {
 	catalog.Default().Install(bean.Plan{

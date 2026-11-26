@@ -29,6 +29,7 @@ const (
 )
 
 func validateGenerationOutput(ctx context.Context, g *generation) error {
+	restoreHTTPOverlay(g)
 	set, err := outputArtifacts(g.outputs, goLanguageVersionPrefix+g.module.GoVersion)
 	if err != nil {
 		return err

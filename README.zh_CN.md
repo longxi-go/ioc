@@ -51,7 +51,7 @@ Destroy 使用容器的清理 Context。不得保存回调 Context，也不能�
 
 | 示例 | 内容 | 使用指南 |
 | --- | --- | --- |
-| [Gin 集成](examples/gin/) | 最小路由装配、请求 Provider、作用域关闭 | [Gin 请求作用域](examples/gin/README.zh_CN.md) |
+| [Gin 集成](examples/gin/) | 注解路由注册、请求 Provider、作用域关闭 | [Gin 请求作用域](examples/gin/README.zh_CN.md) |
 | [Coffee MVC](examples/coffee/) | Nemo 配置绑定、SQLite、HTML/REST、条件 Bean 和事件 | [Coffee 应用集成](examples/coffee/docs/integration.zh_CN.md) |
 
 两者均为独立模块，在各自目录执行 `make run` 和 `make check`。完整示例列表见
@@ -72,6 +72,7 @@ Destroy 使用容器的清理 Context。不得保存回调 Context，也不能�
 | 初始化前置依赖 | depends-on 通过名称/别名指定目标，包括 lazy 目标；目标在依赖方构造前完成 Init |
 | 事件 | 类型化同步监听器、实例排序和生命周期屏障 |
 | 配置 | 内置 Nemo Environment、Gosr 接口注入、启动快照条件与 Profile |
+| HTTP | Controller 与路由注解、类型化 Gin 桥接、独立适配模块中的请求作用域集成 |
 | 组合 | 库发布适配代码和元数据，应用生成入口计划和查询分派 |
 
 条件注册采用显式属性：
@@ -116,11 +117,32 @@ func DefaultRepository() ordercontracts.Repository {
 生成、并发、所有权和兼容规则见[架构](docs/design/docs/architecture.zh.md)，
 事件投递和排序见[事件](docs/design/docs/events.zh.md)。
 
-动态图刷新、自动配置重绑定、内置 Web 框架适配器、提前暴露循环对象和任意方法拦截不属于
+动态图刷新、自动配置重绑定、提前暴露循环对象和任意方法拦截不属于
 当前容器。公开 API 使用模块版本；生成装配描述使用独立且受检查的 schema/ABI。
 升级时应配套使用 CLI 与运行时；ABI 变化时重新生成应用和库产物。0.x 版本可能在
 次版本升级时调整 API；请固定版本并审阅升级变化。
 [路线图](docs/roadmap.md) 区分当前能力和后续方向。
+
+## HTTP 与 Gin
+
+Controller 与 HTTP 路由通过注释注解声明，由独立模块中的 `ginctl` 生成类型化注册代码：
+
+```go
+// +ioc:controller:name=healthController
+// +ioc:http:route=/api/v1/
+type HealthController struct{}
+
+// +ioc:http:get=/healthz
+func (*HealthController) health(ctx *gin.Context) {
+    ctx.Status(http.StatusOK)
+}
+```
+
+该声明映射 `GET /api/v1/healthz`，需要导入 `net/http` 和 Gin。
+Gin 适配器位于独立模块 `github.com/longxi-go/ioc/adaptors/gin`；
+根模块不引入 Gin。参见 [HTTP 与 Gin 指南](docs/design/docs/http.zh.md)，
+以及采用生成式路由的 [Gin](examples/gin/README.zh_CN.md) 和
+[Coffee MVC](examples/coffee/docs/integration.zh_CN.md) 示例。
 
 ## 开发与验证
 
@@ -129,6 +151,7 @@ make setup
 make format
 make check-format
 make check
+make check-adapters
 make docs-build
 ```
 

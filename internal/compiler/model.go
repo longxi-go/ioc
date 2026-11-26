@@ -19,6 +19,7 @@ import (
 
 	gs "github.com/longxi-go/gosr/pkg/ioc"
 	"github.com/longxi-go/ioc/pkg/bean"
+	http "github.com/longxi-go/ioc/pkg/codegen/http"
 )
 
 const (
@@ -35,6 +36,7 @@ type Options struct {
 	Dir, Entry              string
 	Library, Check, Inspect bool
 	Tags, Roots             []string
+	HTTP                    http.Adapter
 	isolated                bool
 }
 
@@ -104,4 +106,5 @@ type packageModel struct {
 	Pkg             *types.Package
 	Sources         map[string]string
 	Constraint      string
+	HTTP            http.Package
 }

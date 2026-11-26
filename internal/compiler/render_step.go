@@ -19,8 +19,11 @@ import (
 	"path/filepath"
 )
 
-func renderGeneration(_ context.Context, g *generation) error {
+func renderGeneration(ctx context.Context, g *generation) error {
 	for _, model := range g.local {
+		if len(model.Recipes) == 0 {
+			continue
+		}
 		data, err := emitPackage(model)
 		if err != nil {
 			return err
@@ -42,6 +45,9 @@ func renderGeneration(_ context.Context, g *generation) error {
 		}
 	}
 	g.outputs[path] = plan
+	if err := renderHTTP(ctx, g); err != nil {
+		return err
+	}
 	return nil
 }
 

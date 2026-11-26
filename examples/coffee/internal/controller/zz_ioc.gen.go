@@ -18,13 +18,588 @@ package controller
 
 import (
 	context "context"
+	http "net/http"
 
+	gin "github.com/gin-gonic/gin"
 	gs "github.com/longxi-go/gosr/pkg/ioc"
+	router "github.com/longxi-go/ioc/adaptors/gin/pkg/router"
 	ioc203bebeba9 "github.com/longxi-go/ioc/examples/coffee/internal/service"
 	ioc820c27f345 "github.com/longxi-go/ioc/examples/coffee/internal/view"
 	bean "github.com/longxi-go/ioc/pkg/bean"
 	catalog "github.com/longxi-go/ioc/pkg/catalog"
 )
+
+func IOCGinPackageRoutes() []router.Route {
+	return []router.Route{
+		{
+			Method: "GET",
+			Path:   "/api/menu",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.menu(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/api/orders",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.create(c)
+				}
+			},
+		},
+		{
+			Method: "GET",
+			Path:   "/api/orders",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.list(c)
+				}
+			},
+		},
+		{
+			Method: "GET",
+			Path:   "/api/orders/:id",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.get(c)
+				}
+			},
+		},
+		{
+			Method: "PUT",
+			Path:   "/api/orders/:id",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.update(c)
+				}
+			},
+		},
+		{
+			Method: "DELETE",
+			Path:   "/api/orders/:id",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.delete(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/api/orders/:id/prepare",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.prepare(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/api/orders/:id/ready",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.ready(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/api/orders/:id/collect",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.collect(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/api/orders/:id/cancel",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "API",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.API",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*API)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.cancel(c)
+				}
+			},
+		},
+		{
+			Method: "GET",
+			Path:   "/assets/style.css",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.styles(c)
+				}
+			},
+		},
+		{
+			Method: "GET",
+			Path:   "/orders/new",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.newOrder(c)
+				}
+			},
+		},
+		{
+			Method: "GET",
+			Path:   "/",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.list(c)
+				}
+			},
+		},
+		{
+			Method: "GET",
+			Path:   "/orders/:id",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.get(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/orders",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.create(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/orders/:id/update",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.update(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/orders/:id/delete",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.delete(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/orders/:id/prepare",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.prepare(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/orders/:id/ready",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.ready(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/orders/:id/collect",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.collect(c)
+				}
+			},
+		},
+		{
+			Method: "POST",
+			Path:   "/orders/:id/cancel",
+			Bean:   "github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "Pages",
+						Contract: "*github.com/longxi-go/ioc/examples/coffee/internal/controller.Pages",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Pages)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.cancel(c)
+				}
+			},
+		},
+	}
+}
 
 func init() {
 	catalog.Default().Contribute(bean.Batch{
@@ -52,7 +627,7 @@ func init() {
 							Source: gs.Source{
 								Package: "github.com/longxi-go/ioc/examples/coffee/internal/controller",
 								File:    "api.go",
-								Line:    30,
+								Line:    31,
 							},
 						},
 					},
@@ -64,7 +639,7 @@ func init() {
 					Source: gs.Source{
 						Package: "github.com/longxi-go/ioc/examples/coffee/internal/controller",
 						File:    "api.go",
-						Line:    28,
+						Line:    29,
 					},
 				},
 				Accept: func(value any) bool {
@@ -125,7 +700,7 @@ func init() {
 							Source: gs.Source{
 								Package: "github.com/longxi-go/ioc/examples/coffee/internal/controller",
 								File:    "pages.go",
-								Line:    33,
+								Line:    35,
 							},
 						},
 						{
@@ -139,7 +714,7 @@ func init() {
 							Source: gs.Source{
 								Package: "github.com/longxi-go/ioc/examples/coffee/internal/controller",
 								File:    "pages.go",
-								Line:    35,
+								Line:    37,
 							},
 						},
 					},
@@ -151,7 +726,7 @@ func init() {
 					Source: gs.Source{
 						Package: "github.com/longxi-go/ioc/examples/coffee/internal/controller",
 						File:    "pages.go",
-						Line:    31,
+						Line:    33,
 					},
 				},
 				Accept: func(value any) bool {

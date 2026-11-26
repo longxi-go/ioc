@@ -17,7 +17,7 @@ flowchart LR
 | [Events](https://github.com/longxi-go/ioc/tree/main/examples/events) | 类型化订阅和监听顺序 | 根模块：`go run ./examples/events` |
 | [Environment](https://github.com/longxi-go/ioc/tree/main/examples/environment) | 预先准备的 Environment 和类型化配置访问 | 根模块：`go run ./examples/environment` |
 | [Prerequisites](https://github.com/longxi-go/ioc/tree/main/examples/prerequisites) | 按名称声明初始化前置条件 | 根模块：`go run ./examples/prerequisites` |
-| [Gin 集成](gin.md) | 受管处理器、单例 Provider、请求实例隔离与清理 | 独立模块：`cd examples/gin && make run` |
+| [Gin 集成](gin.md) | HTTP 注解路由、单例 Provider、请求实例隔离与清理 | 独立模块：`cd examples/gin && make run` |
 | [Coffee MVC](coffee.md) | Nemo 绑定、SQLite、HTML/REST、条件 Bean 和类型化事件 | 独立模块：`cd examples/coffee && make run` |
 
 [Gin](gin.md) 在处理器执行期间管理 Request 作用域；[Coffee](coffee.md) 集成

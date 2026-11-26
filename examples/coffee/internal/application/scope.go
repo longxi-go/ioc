@@ -18,48 +18,45 @@ import (
 	"context"
 	"crypto/rand"
 	"log/slog"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	gs "github.com/longxi-go/gosr/pkg/ioc"
+	ginscope "github.com/longxi-go/ioc/adaptors/gin/pkg/scope"
 	"github.com/longxi-go/ioc/examples/coffee/internal/infrastructure"
 )
 
 const (
-	cleanupTimeout   = 5 * time.Second
-	requestIDHeader  = "X-Request-ID"
-	admissionFailure = "request scope admission failed"
-	cleanupFailure   = "request scope cleanup failed"
+	cleanupTimeout  = 5 * time.Second
+	requestIDHeader = "X-Request-ID"
+	scopeFailure    = "request scope failed"
 )
 
 func cleanupContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.WithoutCancel(ctx), cleanupTimeout)
 }
 
-// RequestScope carries only immutable metadata and closes on normal, abort and panic exits.
-func RequestScope(manager gs.ScopeManager, logger *slog.Logger) gin.HandlerFunc {
+// RequestScope attaches an operation ID before the adapter opens its Request scope.
+func RequestScope(manager gs.ScopeManager, logger *slog.Logger) (gin.HandlerFunc, error) {
+	report := func(err error) {
+		logger.Error(scopeFailure, "error", err)
+	}
+	scoped, err := ginscope.Middleware(ginscope.Options{
+		Manager:        manager,
+		OnError:        report,
+		CleanupTimeout: cleanupTimeout,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return func(ctx *gin.Context) {
 		id := rand.Text()
-		parent := infrastructure.WithOperation(ctx.Request.Context(), id)
-		operation, scope, err := manager.OpenScope(parent, gs.Request)
-		if err != nil {
-			logger.Error(admissionFailure, "error", err)
-			ctx.AbortWithStatus(http.StatusServiceUnavailable)
-			return
-		}
-		defer func() {
-			cleanup, cancel := cleanupContext(operation)
-			defer cancel()
-			if err := scope.Close(cleanup); err != nil {
-				logger.Error(cleanupFailure, "request_id", id, "error", err)
-			}
-		}()
+		operation := infrastructure.WithOperation(ctx.Request.Context(), id)
 		ctx.Header(requestIDHeader, id)
 		ctx.Request = ctx.Request.WithContext(operation)
-		ctx.Next()
+		scoped(ctx)
 		if len(ctx.Errors) > 0 {
 			logger.Error("HTTP request failed", "request_id", id, "errors", ctx.Errors.String())
 		}
-	}
+	}, nil
 }

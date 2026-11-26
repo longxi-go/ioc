@@ -16,7 +16,8 @@ not current APIs or delivery promises. Web integration remains outside the core 
 | I4.1 | Finite injection grammar, explicit Bean conditions and selection diagnostics / 有限注入语法、显式 Bean 条件与选择诊断 | Six validated dependency forms and inspectable metadata-only selection / 六种经过校验的依赖形态与可查询的元数据选择结果 | Supported / 已支持 |
 | I4.2 | Named initialization prerequisites and condition-order separation / 具名初始化前置依赖与条件求值解耦 | Lazy prerequisites complete Init before dependent construction, with explicit scope and cycle rules / lazy 前置依赖在依赖方构造前完成 Init，作用域和依赖环有明确约束 | Supported / 已支持 |
 | I4.3 | Structured annotation attributes, Environment bootstrap and profile conditions / 结构化注解属性、Environment 启动与 Profile 条件 | A generated application reads one configuration Environment and fixes topology at startup / 生成应用通过统一 Environment 读取配置，并在启动时固定拓扑 | Supported / 已支持 |
-| I5 | HTTP/MVC and configuration-center adapters / HTTP/MVC 与配置中心适配器 | Web applications reuse explicit scopes and cleanup rules / Web 应用复用显式作用域与清理规则 | Planned; separate repositories and design / 后续方向，独立仓库与设计 |
+| I5 | Common HTTP annotations and the Gin adapter / 公共 HTTP 注解与 Gin 适配器 | Generated Controller routing with conditional selection and owned request scopes / 生成式 Controller 路由、条件选择及请求作用域管理 | Supported; Gin is a separate module in this repository / 已支持，Gin 为同仓库独立模块 |
+| I5.1 | Additional Web and configuration-center adapters / 其他 Web 与配置中心适配器 | Framework-specific integrations retain separate dependencies and ownership / 各框架集成保持独立依赖与所有权 | Planned / 后续方向 |
 | I6 | Independent adapters and compatibility evidence / 独立适配器与兼容性证据 | Contracts remain usable across implementations and releases / 契约可跨实现与版本使用 | Planned / 后续方向 |
 
 Current mechanisms: [architecture](design/docs/architecture.md),

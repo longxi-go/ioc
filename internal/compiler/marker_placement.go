@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	sourceannotation "github.com/longxi-go/gosr/tools/pkg/annotation"
+	"github.com/longxi-go/ioc/internal/httpcompiler"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -52,7 +53,7 @@ func sweepMarkers(pkg *packages.Package, file *ast.File) error {
 				if err != nil {
 					return at(pkg, ts.Pos(), err)
 				}
-				if st, ok := ts.Type.(*ast.StructType); ok && a.flag(markerComponent) {
+				if st, ok := ts.Type.(*ast.StructType); ok && (a.flag(markerComponent) || a.flag(httpcompiler.Controller)) {
 					for _, field := range st.Fields.List {
 						placed[field.Doc] = true
 					}

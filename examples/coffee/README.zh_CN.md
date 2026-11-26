@@ -22,8 +22,8 @@ flowchart LR
 
 ## 应用集成
 
-IoC 管理实例与生命周期，Nemo 提供启动 Environment 和类型化绑定，路由由 Gin
-应用代码显式注册。配置声明、Bean 注册、生成顺序、Gin 装配、请求作用域和监听器
+IoC 管理实例与生命周期，Nemo 提供启动 Environment 和类型化绑定。HTTP 注解
+生成类型化 Gin 路由注册代码。配置声明、Bean 注册、生成顺序、Gin 装配、请求作用域和监听器
 激活见[集成指南](docs/integration.zh_CN.md)。
 
 ## 启动
@@ -122,7 +122,8 @@ curl http://127.0.0.1:8082/api/orders/1/collect \
 | 注解或机制 | 声明位置 | 用途 |
 | --- | --- | --- |
 | `+ioc:bean` | [配置](internal/configuration/settings.go)、[Service](internal/service/service.go)、[数据库](internal/infrastructure/database.go) | 类型化构造及基础设施所有权 |
-| `+ioc:component`、`+ioc:inject` | [API](internal/controller/api.go)、[Pages](internal/controller/pages.go) | 向私有字段生成同包注入代码 |
+| `+ioc:controller`、`+ioc:inject` | [API](internal/controller/api.go)、[Pages](internal/controller/pages.go) | 向私有字段生成同包注入代码 |
+| `+ioc:http:route`、`+ioc:http:get`、`+ioc:http:post`、`+ioc:http:put`、`+ioc:http:delete` | Controller 方法 | 生成原生 Gin 映射 |
 | `+ioc:expose=model.Repository` | [NewSQLite](internal/repository/sqlite.go) | 显式暴露 Repository 契约 |
 | `name`、`aliases` | Service 的 orderService/orders，Logger 的 applicationLogger/defaultLogger | 同一定义的名称与别名 |
 | `+ioc:primary`、`+ioc:qualifier=audit` | [Logger](internal/observation/logging.go) | 默认应用日志与单独选择的审计日志 |

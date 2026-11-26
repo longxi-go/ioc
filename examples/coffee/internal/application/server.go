@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"time"
 
+	ginrouter "github.com/longxi-go/ioc/adaptors/gin/pkg/router"
 	managed "github.com/longxi-go/ioc/pkg/context"
 )
 
@@ -46,8 +47,8 @@ func NewServer(address string, handler http.Handler) *http.Server {
 }
 
 // Run attempts bounded HTTP drain before closing the graph and joins shutdown errors.
-func Run(ctx context.Context, options ...managed.Option) (result error) {
-	app, err := Start(ctx, options...)
+func Run(ctx context.Context, routes []ginrouter.Route, options ...managed.Option) (result error) {
+	app, err := Start(ctx, routes, options...)
 	if err != nil {
 		return err
 	}

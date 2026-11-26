@@ -24,7 +24,7 @@ flowchart LR
 ## Application integration
 
 IoC manages instances and lifecycle; Nemo provides the startup Environment and
-typed binding. Routes are registered explicitly in Gin. Configuration declarations,
+typed binding. HTTP annotations generate typed Gin route registration. Configuration declarations,
 Bean registration, generation order, Gin assembly, request scope and listener
 activation are described in the [integration guide](docs/integration.md).
 
@@ -125,7 +125,8 @@ successful form actions. Templates and CSS are embedded in the executable.
 | Annotation/mechanism | Declaration | Purpose |
 | --- | --- | --- |
 | `+ioc:bean` | [configuration](internal/configuration/settings.go), [Service](internal/service/service.go), [database](internal/infrastructure/database.go) | Typed constructors and infrastructure ownership |
-| `+ioc:component`, `+ioc:inject` | [API](internal/controller/api.go), [Pages](internal/controller/pages.go) | Same-package injection into private fields |
+| `+ioc:controller`, `+ioc:inject` | [API](internal/controller/api.go), [Pages](internal/controller/pages.go) | Same-package injection into private fields |
+| `+ioc:http:route`, `+ioc:http:get`, `+ioc:http:post`, `+ioc:http:put`, `+ioc:http:delete` | Controller methods | Generated native Gin mappings |
 | `+ioc:expose=model.Repository` | [NewSQLite](internal/repository/sqlite.go) | Publish the implemented repository contract explicitly |
 | `name`, `aliases` | Service `orderService` / `orders`; logger `applicationLogger` / `defaultLogger` | Multiple names for one definition |
 | `+ioc:primary`, `+ioc:qualifier=audit` | [loggers](internal/observation/logging.go) | Default application logger and separately selected audit channel |

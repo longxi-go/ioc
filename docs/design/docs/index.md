@@ -41,12 +41,15 @@ connect router execution to managed Beans. [Coffee MVC](examples/coffee.md)
 combines Nemo binding, repository/Service injection, HTML/REST controllers,
 conditional listeners and resource shutdown.
 
+The [HTTP and Gin guide](http.md) specifies Controller and route annotations,
+generation and registration. The adapter has its own module; the core container
+does not depend on a Web framework.
+
 ## Supported boundaries and compatibility
 
 The container supports a statically known graph with configuration-dependent
 candidate selection at startup. It does not provide runtime source discovery,
-dynamic graph refresh, automatic configuration rebinding, built-in Web framework adapters,
-early-exposed circular objects or arbitrary method interception.
+dynamic graph refresh, automatic configuration rebinding, early-exposed circular objects or arbitrary method interception.
 
 Public APIs follow the module version. Version 0.x may change APIs between minor
 versions; pin dependencies and review changes before upgrading. Generated Bean

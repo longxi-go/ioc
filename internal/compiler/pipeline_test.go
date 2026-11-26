@@ -62,3 +62,36 @@ func assertGenerationStageOrder(t *testing.T, options Options, want []string) {
 		t.Fatalf("stage order = %v, want %v", names, want)
 	}
 }
+
+func TestHTTPAdapterWithoutBootstrapRetainsStageOrder(t *testing.T) {
+	assertGenerationStageOrder(t, Options{
+		HTTP: &httpTestBackend{},
+	}, []string{
+		"prepare",
+		"analyze",
+		"compose",
+		"validate graph",
+		"render",
+		"apply source headers",
+		"format Go",
+		"validate generated overlay",
+		"finish output",
+	})
+}
+
+func TestHTTPBootstrapStagePrecedesTypedAnalysis(t *testing.T) {
+	assertGenerationStageOrder(t, Options{
+		HTTP: bootstrapHTTPBackend{},
+	}, []string{
+		"prepare",
+		"prepare HTTP declarations",
+		"analyze",
+		"compose",
+		"validate graph",
+		"render",
+		"apply source headers",
+		"format Go",
+		"validate generated overlay",
+		"finish output",
+	})
+}

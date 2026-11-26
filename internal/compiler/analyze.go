@@ -33,8 +33,9 @@ const (
 // packageAnalysis keeps typed source and its collected recipes in one invocation.
 // Declaration-specific analyzers share this context without owning loading or output.
 type packageAnalysis struct {
-	pkg   *packages.Package
-	model *packageModel
+	pkg             *packages.Package
+	model           *packageModel
+	controllerBases map[string]string
 }
 
 func analyze(pkg *packages.Package) (*packageModel, error) {
@@ -67,6 +68,9 @@ func analyze(pkg *packages.Package) (*packageModel, error) {
 				}
 			}
 		}
+	}
+	if err := analysis.attachHTTP(); err != nil {
+		return nil, err
 	}
 	if err := attachListeners(pkg, model); err != nil {
 		return nil, err

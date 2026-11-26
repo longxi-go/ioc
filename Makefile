@@ -4,6 +4,7 @@ GO ?= go
 UV ?= uv
 GOLANGCI_LINT ?= golangci-lint
 TAG ?=
+MODULE ?= root
 REPOSITORY ?= longxi-go/ioc
 WORKSPACE ?=
 export GO GOLANGCI_LINT
@@ -19,7 +20,7 @@ override export GOTOOLCHAIN := local
 
 .PHONY: help setup format check-format test-format test race vet lint verify-mod check generate check-generated build
 
-.PHONY: docs-setup docs-serve docs-build compatibility test-scripts validate-release preflight-release verify-environment
+.PHONY: docs-setup docs-serve docs-build compatibility test-scripts validate-release preflight-release verify-environment check-adapters
 .PHONY: license-headers check-license-headers
 
 help:
@@ -48,7 +49,8 @@ help:
 	  '  compatibility     Verify the selected Go toolchain' \
 	  '  validate-release  Validate TAG=vX.Y.Z and English notes' \
 	  '  preflight-release Check published dependencies and Pages settings' \
-	  '  check             Run all required local quality gates'
+	  '  check-adapters    Verify Gin and applications against checkout source' \
+	  '  check             Run root module quality gates'
 
 verify-environment:
 	@python3 scripts/go_environment.py
@@ -99,10 +101,13 @@ test-scripts:
 	python3 -m unittest discover -s scripts/tests -v
 
 validate-release:
-	python3 scripts/release.py --tag "$(TAG)"
+	python3 scripts/release.py --tag "$(TAG)" --module "$(MODULE)"
 
 preflight-release: validate-release verify-mod
-	python3 scripts/release.py --tag "$(TAG)" --check-github --repository "$(REPOSITORY)"
+	python3 scripts/release.py --tag "$(TAG)" --module "$(MODULE)" --check-github --repository "$(REPOSITORY)"
+
+check-adapters: verify-environment
+	python3 scripts/check_modules.py
 
 check: check-license-headers check-format test-format verify-mod vet test race lint check-generated test-scripts
 build:

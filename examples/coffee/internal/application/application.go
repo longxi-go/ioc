@@ -21,8 +21,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	ginrouter "github.com/longxi-go/ioc/adaptors/gin/pkg/router"
 	"github.com/longxi-go/ioc/examples/coffee/internal/configuration"
-	"github.com/longxi-go/ioc/examples/coffee/internal/controller"
 	managed "github.com/longxi-go/ioc/pkg/context"
 )
 
@@ -34,7 +34,7 @@ type Running struct {
 }
 
 // Start exposes routes only after all eager Beans and prerequisites are ready.
-func Start(ctx context.Context, options ...managed.Option) (_ *Running, result error) {
+func Start(ctx context.Context, routes []ginrouter.Route, options ...managed.Option) (_ *Running, result error) {
 	owner, err := managed.NewApplicationContext(ctx, options...)
 	if err != nil {
 		return nil, err
@@ -49,14 +49,6 @@ func Start(ctx context.Context, options ...managed.Option) (_ *Running, result e
 	if err = owner.Start(ctx); err != nil {
 		return nil, err
 	}
-	api, err := owner.GetBean[*controller.API](ctx)
-	if err != nil {
-		return nil, err
-	}
-	pages, err := owner.GetBean[*controller.Pages](ctx)
-	if err != nil {
-		return nil, err
-	}
 	settings, err := owner.GetBean[*configuration.Settings](ctx)
 	if err != nil {
 		return nil, err
@@ -66,9 +58,14 @@ func Start(ctx context.Context, options ...managed.Option) (_ *Running, result e
 		return nil, err
 	}
 	router := gin.New()
-	router.Use(gin.Recovery(), RequestScope(owner, logger))
-	api.Register(router)
-	pages.Register(router)
+	middleware, err := RequestScope(owner, logger)
+	if err != nil {
+		return nil, err
+	}
+	router.Use(gin.Recovery(), middleware)
+	if err := ginrouter.Register(ctx, router, owner, routes...); err != nil {
+		return nil, err
+	}
 	return &Running{
 		Context:  owner,
 		settings: settings,

@@ -100,3 +100,10 @@ func TestCanceledRequestIsRejectedBeforeAllocation(t *testing.T) {
 		t.Fatalf("cancellation not reported: %v", log.snapshot())
 	}
 }
+
+func TestGeneratedRouteDeclarations(t *testing.T) {
+	routes := IOCGinRoutes()
+	if len(routes) != 1 || routes[0].Method != http.MethodGet || routes[0].Path != requestPath || routes[0].Bean == "" || routes[0].Bind == nil {
+		t.Fatalf("generated routes: %+v", routes)
+	}
+}

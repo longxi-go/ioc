@@ -25,7 +25,7 @@ Bean 实例。
 `pkg/context` 提供查询、作用域和应用生命周期操作。`internal/container` 绑定
 依赖图，协调构造与清理，检查生命周期状态。`internal/eventdispatch` 准备并投递
 同步事件。`pkg/codegen` 是公开编译器 API，`internal/command` 和 `cmd/ioctl`
-提供 CLI。运行时包不导入编译器或应用包。
+通过共享 `pkg/cli` 提供核心 CLI。运行时包不导入编译器或应用包。
 
 生成的 `init` 登记定义和计划，不创建实例、不执行 I/O、不启动 goroutine。
 `NewApplicationContext(ctx, options...)` 为选定计划及其注册项创建快照，使用传入的
@@ -102,6 +102,9 @@ flowchart TD
 | --- | --- |
 | `+ioc:bean` | 解析参数，调用返回 `T` 或 `(T, error)` 的包级函数 |
 | `+ioc:component` | 解析标注字段，分配 `&T{}` 并赋值这些字段 |
+
+`+ioc:controller` 是组件注册的专用形式，使用相同的字段注入路径；HTTP 映射
+由所选框架后端生成。
 
 工厂返回值不会再经过独立的字段注入阶段。同时标注结构体与工厂会注册两个定义，
 而不是同一 Bean 的两个阶段；未指定名称等条件的查询可能因此产生歧义。工厂可以
@@ -269,3 +272,13 @@ flowchart TD
 责任。替换校验失败会清理原分配对象。生命周期适配仍静态绑定到声明结果，装饰不是
 任意方法拦截。保留的本地事件发布器与 Environment 不能被装饰或替换为其他主候选，支持通过名称
 选择其他发布器。
+
+## HTTP 生成边界
+
+公共 `pkg/codegen/http` 模型连接公共 HTTP 分析与框架后端，`codegen.Options.HTTP`
+显式选择后端。`ginctl` 静态装配 Gin 后端；核心容器及根 `ioctl` 不导入 Gin。
+后端返回 Go 源码，由公共流水线应用文件头、格式化并验证覆盖层后写入。
+导入合并依据选定模块中的实际包名解析默认导入，并协调别名，不改写局部同名变量。
+
+Gin 模块的运行时路由与作用域包不依赖编译器；注册使用启动后的有效 Bean 定义，
+Controller 查找使用请求 Context。完整规则见 [HTTP 与 Gin](http.md)。

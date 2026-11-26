@@ -1,0 +1,112 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"sync/atomic"
+
+	_ "example.org/consumer/other"
+	"github.com/gin-gonic/gin"
+)
+
+var created, destroyed atomic.Int64
+
+// +ioc:controller:name=controller
+// +ioc:scope=request
+// +ioc:http:route=/api/
+type controller struct {
+	count int
+}
+
+func (c *controller) Init(context.Context) error {
+	created.Add(1)
+	return nil
+}
+
+func (c *controller) Destroy(context.Context) error {
+	destroyed.Add(1)
+	return nil
+}
+
+// +ioc:http:get=/item/
+func (c *controller) private(g *gin.Context) {
+	c.count++
+	g.String(200, fmt.Sprint(c.count))
+}
+
+// +ioc:http:post=/post
+func (c *controller) post(g *gin.Context) {
+	g.Status(201)
+}
+
+// +ioc:http:put=/put
+func put(g *gin.Context) {
+	g.Status(202)
+}
+
+// +ioc:http:patch=/patch
+func patch(g *gin.Context) {
+	g.Status(203)
+}
+
+// +ioc:http:delete=/delete
+func del(g *gin.Context) {
+	g.Status(204)
+}
+
+// +ioc:http:head=/head
+func head(g *gin.Context) {
+	g.Status(205)
+}
+
+// +ioc:http:route:method=OPTIONS,path=/options
+func options(g *gin.Context) {
+	g.Status(206)
+}
+
+func main() {
+	_ = IOCGinRoutes()
+}
+
+// +ioc:http:get=/value
+func (c controller) value(g *gin.Context) {
+	g.String(200, "value")
+}
+
+// +ioc:controller
+// +ioc:profile=excluded
+type excluded struct{}
+
+// +ioc:http:get=/api/item/
+func (*excluded) same(g *gin.Context) {
+	g.Status(500)
+}
+
+// +ioc:controller
+// +ioc:profile=collision
+type conflict struct{}
+
+// +ioc:http:get=/api/item/
+func (*conflict) same(g *gin.Context) {
+	g.Status(500)
+}
+
+// +ioc:http:get="/params/:id"
+func param(g *gin.Context) {
+	g.String(200, g.Param("id"))
+}
+
+// +ioc:http:get=/files/*tail
+func files(g *gin.Context) {
+	g.String(200, g.Param("tail"))
+}
+
+// +ioc:http:route:method=TRACE,path=/trace
+func trace(g *gin.Context) {
+	g.Status(207)
+}
+
+// +ioc:http:route:method=PURGE,path=/purge
+func purge(g *gin.Context) {
+	g.Status(208)
+}

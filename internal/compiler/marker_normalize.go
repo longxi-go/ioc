@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	env "github.com/longxi-go/gosr/pkg/environment"
+	"github.com/longxi-go/ioc/internal/httpcompiler"
 )
 
 const (
@@ -30,7 +31,7 @@ const (
 // normalizeMarkers translates structured source attributes to the internal selector
 // representation only after parsing, so legacy supplements remain unknown syntax.
 func normalizeMarkers(a annotation) error {
-	for _, key := range []string{markerBean, markerComponent} {
+	for _, key := range []string{markerBean, markerComponent, httpcompiler.Controller} {
 		if !a.flag(key) {
 			continue
 		}

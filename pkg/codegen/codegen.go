@@ -19,6 +19,7 @@ import (
 
 	gs "github.com/longxi-go/gosr/pkg/ioc"
 	"github.com/longxi-go/ioc/internal/compiler"
+	http "github.com/longxi-go/ioc/pkg/codegen/http"
 )
 
 // Options selects an owned module, application entry and explicit source roots.
@@ -29,6 +30,8 @@ type Options struct {
 	Dir, Entry     string
 	Library, Check bool
 	Tags, Roots    []string
+	// HTTP explicitly selects transport generation; nil rejects HTTP endpoints.
+	HTTP http.Adapter
 }
 
 // Edge reports a declared potential dependency relationship. From
@@ -64,6 +67,7 @@ func Inspect(ctx context.Context, options Options) (*Report, error) {
 func run(ctx context.Context, o Options, inspect bool) (*Report, error) {
 	result, err := compiler.Run(ctx, compiler.Options{
 		Dir:     o.Dir,
+		HTTP:    o.HTTP,
 		Entry:   o.Entry,
 		Library: o.Library,
 		Check:   o.Check,

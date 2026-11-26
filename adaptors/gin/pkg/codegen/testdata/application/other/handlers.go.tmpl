@@ -1,0 +1,8 @@
+package other
+
+import "github.com/gin-gonic/gin"
+
+// +ioc:http:get=/other
+func private(c *gin.Context) {
+	c.String(200, "other")
+}

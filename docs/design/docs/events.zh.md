@@ -26,7 +26,8 @@ func (*Notifications) onPlaced(ctx context.Context, placed OrderPlaced) error {
 
 此声明片段假定 `OrderPlaced` 实现 `event.Event`。
 [可执行示例](https://github.com/longxi-go/ioc/tree/main/examples/events) 包含完整生产者、
-监听器、启动和清理。`listener` 为显式注册的 Bean 或组件订阅类型化 OnEvent；`listen` 订阅
+监听器、启动和清理。`listener` 为显式注册的 Bean 订阅类型化 OnEvent；
+`listen` 订阅
 受管具体类型上标注的方法，普通 OnEvent 不会隐式订阅。二者都要求
 `(context.Context, E) error`，生成时校验并产生同包直接调用。同一 OnEvent 使用
 两种注解仍只有一个监听器 ID，只投递一次。

@@ -1,0 +1,49 @@
+package {{.Name}}
+import (
+ {{if .Controllers}}"net/http"{{end}}
+ {{if .Routes}}
+ "github.com/gin-gonic/gin"
+ gs "github.com/longxi-go/gosr/pkg/ioc"
+ {{end}}
+ "github.com/longxi-go/ioc/adaptors/gin/pkg/router"
+ {{range $i,$p:=.Packages}}pkg{{$i}} {{quote $p}}
+ {{end}}
+)
+
+// IOCGinPackageRoutes describes local handlers without creating controllers.
+func IOCGinPackageRoutes() []router.Route {
+ return []router.Route{
+ {{range .Routes}}{
+ Method: {{quote .Method}},
+ Path: {{quote .Path}},
+ Bean: {{quote .Bean}},
+ Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+ {{if .Bean}}return func(c *gin.Context) {
+ value,err:=factory.Lookup(c.Request.Context(),gs.Selector{Name:{{quote .Name}},Contract:{{quote .Contract}}})
+ if err!=nil {
+ _=c.Error(err)
+ c.AbortWithStatus(http.StatusServiceUnavailable)
+ return
+ }
+ controller,ok:=value.({{.Type}})
+ if !ok || controller==nil {
+ _=c.Error(&gs.Error{Code:gs.ContractMismatch})
+ c.AbortWithStatus(http.StatusServiceUnavailable)
+ return
+ }
+ controller.{{.Handler}}(c)
+ }
+ {{else}}return {{.Handler}}
+ {{end}}
+ },
+ },{{end}}
+ }
+}
+{{if .Entry}}
+// IOCGinRoutes aggregates owned declarations. Startup and HTTP ownership remain explicit.
+func IOCGinRoutes() []router.Route {
+ routes:=IOCGinPackageRoutes()
+ {{range $i,$p:=.Packages}}routes=append(routes,pkg{{$i}}.IOCGinPackageRoutes()...)
+ {{end}}return routes
+}
+{{end}}

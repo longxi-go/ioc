@@ -1,0 +1,7 @@
+package main
+
+import tm "time"
+
+func HTTPGenerated() string {
+	return tm.Unix(0, 0).UTC().Format("2006")
+}

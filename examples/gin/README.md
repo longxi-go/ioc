@@ -69,15 +69,25 @@ metadata, not authenticated tenant identity. `Destroy(context.Context) error`
 records release when the request scope closes. [Statistics][gin-examples-gin-request-go] uses
 atomic counters so concurrent requests can record creation and destruction.
 
-[NewHandler][gin-examples-gin-handler-go] uses constructor injection:
+[Handler][gin-examples-gin-handler-go] declares field injection and its HTTP endpoint:
 
 ```go
-// NewHandler keeps singleton dependencies explicit without capturing a request.
-// +ioc:bean
-func NewHandler(service *Service) *Handler {
-	return &Handler{
-		service: service,
+// Handler uses an injected Service without retaining request instances.
+// +ioc:controller:name=requestHandler
+type Handler struct {
+	// +ioc:inject
+	service *Service
+}
+
+// +ioc:http:get=/request
+func (h *Handler) serve(ctx *gin.Context) {
+	view, err := h.Describe(ctx.Request.Context())
+	if err != nil {
+		_ = ctx.Error(err)
+		unavailable(ctx)
+		return
 	}
+	ctx.JSON(http.StatusOK, view)
 }
 ```
 
@@ -89,7 +99,7 @@ make generate
 make check
 ```
 
-The [Makefile][gin-examples-gin-makefile] selects the public compiler from the IoC version declared
+The [Makefile][gin-examples-gin-makefile] runs the `ginctl` selected by the Gin adapter requirement
 in [go.mod][gin-examples-gin-go-mod], with `generate --entry . --roots .`. The generated
 [zz_ioc.gen.go][gin-examples-gin-zz-ioc-gen-go] contains package definitions and the query/composition
 plan. Its `init` registers definitions; `ApplicationContext.Start` constructs eager
@@ -98,19 +108,30 @@ or annotations. No runtime module list is required.
 
 ## Assemble the Gin router
 
-[New][gin-examples-gin-application-go] creates ApplicationContext, starts the graph and retrieves
-Handler and Statistics with typed `GetBean[T]` calls. It then creates `gin.New()`,
-installs [RequestScope][gin-examples-gin-scope-middleware-go] and registers `GET /request` with the
-managed Handler. Router construction and route registration are explicit application
-code; annotation processing supplies objects and their dependencies.
+[New][gin-examples-gin-application-go] starts ApplicationContext before registering
+`IOCGinRoutes()` with the adapter's `router.Register`. The generated function
+aggregates the annotated mappings; its package bridges call private methods
+directly. `+ioc:controller` supplies component registration and does not require
+an additional `+ioc:component`.
 
-> **TODO: generate Handler and route registration code from HTTP method and path
-> annotations, following Spring's `GetMapping` and related mapping annotations.**
+```go
+middleware, err := RequestScope(owner, report)
+if err != nil {
+    return nil, err
+}
+engine := gin.New()
+engine.Use(middleware)
+if err := ginrouter.Register(ctx, engine, owner, IOCGinRoutes()...); err != nil {
+    return nil, err
+}
+```
 
-RequestScope calls `OpenScope(parent, gs.Request)`, sets the returned Context on
-`ctx.Request`, invokes downstream handlers and defers scope Close. Handlers pass
-`ctx.Request.Context()` to business methods. Calling Provider with a background
-Context loses access to the HTTP operation's scope.
+[RequestScope][gin-examples-gin-scope-middleware-go] adds tenant metadata, then delegates
+scope ownership to `adaptors/gin/pkg/scope.Middleware`. The adapter opens the
+Request scope, replaces the HTTP request context and closes the scope after
+handler execution. The wrapper reports errors recorded by the handler through
+`ErrorHandlerFunc`. Handlers pass `ctx.Request.Context()` to business methods;
+a background Context cannot resolve the HTTP request's scoped dependencies.
 
 `GET /request` resolves Provider twice. Both IDs match within a request; different
 requests receive distinct instances. A missing tenant or a cancelled operation

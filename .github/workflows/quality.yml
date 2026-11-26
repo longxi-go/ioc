@@ -65,6 +65,43 @@ jobs:
         run: |
           make compatibility
 
+  adapters:
+    name: Gin adapter and applications (Go ${{ matrix.go-version }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - go-version: '1.27.0'
+            mode: compatibility
+          - go-version: '1.27.4'
+            mode: quality
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_ref }}
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: |
+            go.sum
+            adaptors/gin/go.sum
+            examples/gin/go.sum
+            examples/coffee/go.sum
+      - name: Prepare pinned linter
+        if: matrix.mode == 'quality'
+        env:
+          GOBIN: ${{ runner.temp }}/quality-tools
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@"$GOLANGCI_LINT_VERSION"
+          printf '%s\n' "$GOBIN" >> "$GITHUB_PATH"
+      - name: Verify adapter and applications against checkout source
+        env:
+          CHECK_MODE: ${{ matrix.mode }}
+        run: python3 scripts/check_modules.py --mode "$CHECK_MODE"
+
   documentation:
     name: Build bilingual documentation
     runs-on: ubuntu-24.04

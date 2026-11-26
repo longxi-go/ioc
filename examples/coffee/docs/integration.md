@@ -12,13 +12,13 @@ loads properties and generates typed binding. Gin owns HTTP routing and middlewa
 flowchart TD
     Config[Settings + Nemo annotation] --> NemoCLI[nemoctl generate]
     NemoCLI --> Binding[zz_nemo.gen.go]
-    Beans[Factories + components + listeners] --> IoCCLI[ioctl generate]
+    Beans[Factories + components + listeners] --> IoCCLI[ginctl generate]
     Binding --> IoCCLI
     IoCCLI --> Adapters[Package adapters + entry plan]
     Adapters --> Build[go build]
     Build --> Bootstrap["NewApplicationContext: Environment snapshot"]
     Bootstrap --> Start["Start: conditions, graph checks and initialization"]
-    Start --> Routes[Get controllers and register Gin routes]
+    Start --> Routes[router.Register active mappings]
     Routes --> HTTP[Serve HTTP]
 ```
 
@@ -30,7 +30,7 @@ flowchart TD
 | `infrastructure` | Database pool, schema prerequisite, request metadata | Settings; operation Context |
 | `repository` | SQL and atomic order version/state checks | Managed Database |
 | `service` | Order operations and post-commit publication | Repository, event Publisher, request Provider, Logger |
-| `controller` | JSON/form parsing, status codes and route registration | Service; Renderer for HTML |
+| `controller` | JSON/form parsing, status codes and route annotations | Service; Renderer for HTML |
 | `view` | Embedded HTML templates and CSS | No business service |
 | `observation` | Audit and optional receipt subscriptions | Selected sink/printer and Logger |
 | `application` | Start the graph, connect controllers to Gin, own shutdown | ApplicationContext |
@@ -187,7 +187,8 @@ and [audit.go][coffee-examples-coffee-internal-observation-audit-go].
 
 ```go
 // API adapts JSON requests to the same use cases used by HTML forms.
-// +ioc:component
+// +ioc:controller
+// +ioc:http:route=/api
 type API struct {
 	// +ioc:inject:name=orders
 	orders *service.Service
@@ -216,7 +217,7 @@ dependencies and executes generation in dependency order:
 
 ```text
 nemoctl generate --roots ./internal/configuration
-ioctl generate --entry ./cmd/coffee --roots ./internal/...
+ginctl generate --entry ./cmd/coffee --roots ./internal/...
 ```
 
 Nemo's generated methods must exist before IoC type analysis. IoC writes package
@@ -240,15 +241,40 @@ or declarations and regenerate rather than editing adapters.
 2. Call `Start(ctx)` to evaluate conditions, bind and validate the active graph,
    then initialize eager Beans, including Settings, Database, migration, Service
    and controllers.
-3. Obtain API, Pages, Settings and Logger through typed `GetBean[T]` calls.
-4. Create `gin.New()`, install Recovery before RequestScope, register controller
-   routes and wrap the router with `http.CrossOriginProtection`.
+3. Obtain Settings and Logger through typed `GetBean[T]` calls.
+4. Create `gin.New()`, install Recovery before RequestScope, call the adapter's
+   `router.Register` and wrap the router with `http.CrossOriginProtection`.
 
-IoC supplies controllers and dependencies; route registration remains explicit
-application code. `API.Register` and `Pages.Register` connect their methods to Gin.
+The Controller's `+ioc:http:route=/api` defines the common prefix; a method
+annotation supplies the relative path:
 
-> **TODO: generate Handler and route registration code from HTTP method and path
-> annotations, following Spring's `GetMapping` and related mapping annotations.**
+```go
+// +ioc:http:get=/orders/:id
+func (a *API) get(ctx *gin.Context) {
+	id, err := positive(ctx.Param(idParameter))
+	if err != nil {
+		apiError(ctx, err)
+		return
+	}
+	order, err := a.orders.Get(ctx.Request.Context(), id)
+	if err != nil {
+		apiError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, order)
+}
+```
+
+This declaration registers `GET /api/orders/:id`. Typed bridges are generated in
+the Controller's package, so handler methods can remain private. `Pages` declares
+HTML endpoints through the same mechanism. `+ioc:controller` registers each
+Controller; an additional `+ioc:component` is unnecessary.
+
+`cmd/coffee` passes generated `IOCGinRoutes()` to `application.Run`. The assembly
+layer registers active mappings after container startup. Excluded conditional
+Controllers contribute no routes; conflicting active mappings fail startup.
+The application owns scopes and HTTP serving; generated `init` opens no resources
+and starts no listener.
 
 `application.Run` creates the HTTP server only after assembly succeeds. It stops
 accepting requests and waits for active HTTP requests before closing the graph.
@@ -282,9 +308,9 @@ func NewOperation(ctx context.Context) (*model.Operation, error) {
 ```
 
 [RequestScope][coffee-examples-coffee-internal-application-scope-go] creates an ID, stores it in a derived
-standard Context and calls `OpenScope(parent, gs.Request)`. It replaces
-`ctx.Request` with `ctx.Request.WithContext(operation)` before invoking downstream
-handlers. Controllers pass `ctx.Request.Context()` to Service methods. The Provider
+standard Context. The adapter's `scope.Middleware` opens the Request scope and
+installs the derived Context on the HTTP request before invoking handlers.
+Controllers pass `ctx.Request.Context()` to Service methods. The Provider
 uses that Context to resolve the current request's Operation; passing a background
 Context would lose the scope capability.
 

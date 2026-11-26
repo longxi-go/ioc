@@ -5,7 +5,8 @@
 将 Marker 放在包注释、行尾注释或未托管结构体字段上会报错。未知 Marker 和
 不支持的注解位置也会产生源码诊断。Marker 名称区分大小写。
 
-本文的 **Bean 声明**指带有 `+ioc:bean` 的函数，或带有 `+ioc:component` 的结构体。声明补充注解必须与这些注册注解之一一起使用；字段补充
+本文的 **Bean 声明**指带有 `+ioc:bean` 的函数，或带有 `+ioc:component`、
+`+ioc:controller` 的结构体。声明补充注解必须与这些注册注解之一一起使用；字段补充
 注解需要 `+ioc:inject`。`+ioc:listen` 方法只允许 `+ioc:order` 作为补充。
 
 ## 语法、目标与默认值
@@ -18,7 +19,8 @@
 | --- | --- | --- | --- | --- |
 | `+ioc:bean:name=readDB,aliases={reportsDB}` | 包级函数 | 不注册 | 否 | 构造函数返回 `T` 或 `(T, error)`；不能是方法、可变参数函数或开放泛型。支持裸 Marker，名称默认为函数名。 |
 | `+ioc:component:name=repository,aliases={repo}` | 具名非泛型结构体 | 不注册 | 否 | 生成 `&T{}` 和注解字段赋值，不调用构造函数。支持裸 Marker，名称默认为类型名。 |
-| `+ioc:listener` | Bean 声明 | 不订阅 | 否 | 必须同时声明 bean/component，并具有 `OnEvent(context.Context, E) error`；按声明结果类型生成订阅 |
+| `+ioc:controller:name=health,aliases={healthz}` | 具名非泛型结构体 | 不注册 | 否 | 具有组件注册语义的 HTTP Controller；映射见 [HTTP 与 Gin](http.md) |
+| `+ioc:listener` | Bean 声明 | 不订阅 | 否 | 必须显式声明 Bean 注册，并具有 `OnEvent(context.Context, E) error`；按声明结果类型生成订阅 |
 | `+ioc:listen` | 静态已知的受管具体类型上的方法 | 不订阅 | 否 | 需要 `(context.Context, E) error`；包级函数和无受管 Bean 对应的方法非法 |
 | `+ioc:inject:name=readDB,qualifiers={sql}` | 组件具名字段 | 不修改字段 | 否 | 裸 Marker 按字段类型选择，可用名称/别名与限定符进一步筛选；支持私有字段，拒绝嵌入字段和 Context 字段 |
 | `+ioc:param:parameter=read,name=readDB,qualifiers={sql,read}` | Bean 构造函数 | 只按参数类型选择 | 是，每个参数一次 | 必须是已存在的命名参数，至少有 `name` 或 `qualifiers`；不能指向 `_`、未知参数或 Context |
@@ -38,6 +40,11 @@
 不可重复 Marker 即使值相同也不能写两次。结构化 `param` 中 `parameter` 必填，
 `name` 与 `qualifiers` 各自可选。注册的 name/aliases 和注入的 name/qualifiers 均可省略。
 空白名称/标识符、重复别名/限定符和未知属性均报错。`listener` 不接受属性。
+
+## Controller 与 HTTP 路由
+
+`+ioc:controller` 是组件注册的专用形式，同样支持名称、别名、字段注入、条件和生命周期。
+HTTP 注解的完整形式、简写、目标及路径规则见 [HTTP 与 Gin](http.md)。
 
 ## 注册与契约
 

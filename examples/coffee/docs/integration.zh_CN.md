@@ -11,13 +11,13 @@ Nemo 加载属性并生成类型化绑定代码，Gin 负责路由和中间件�
 flowchart TD
     Config[Settings 与 Nemo 注解] --> NemoCLI[nemoctl generate]
     NemoCLI --> Binding[zz_nemo.gen.go]
-    Beans[工厂、组件与监听声明] --> IoCCLI[ioctl generate]
+    Beans[工厂、组件与监听声明] --> IoCCLI[ginctl generate]
     Binding --> IoCCLI
     IoCCLI --> Adapters[包适配器与入口计划]
     Adapters --> Build[go build]
     Build --> Bootstrap["NewApplicationContext：Environment 快照"]
     Bootstrap --> Start["Start：条件、依赖图校验与初始化"]
-    Start --> Routes[获取 Controller 并注册 Gin 路由]
+    Start --> Routes[router.Register 注册活动路由]
     Routes --> HTTP[提供 HTTP 服务]
 ```
 
@@ -29,7 +29,7 @@ flowchart TD
 | `infrastructure` | 数据库连接池、迁移前置条件、请求元数据 | Settings、操作 Context |
 | `repository` | SQL 及原子版本、状态校验 | 受管 Database |
 | `service` | 订单操作与提交后事件发布 | Repository、事件 Publisher、请求 Provider、Logger |
-| `controller` | JSON/表单解析、状态码与路由注册 | Service；HTML 使用的 Renderer |
+| `controller` | JSON/表单解析、状态码与路由注解 | Service；HTML 使用的 Renderer |
 | `view` | 内嵌 HTML 模板和 CSS | 无业务 Service 依赖 |
 | `observation` | 审计和可选取餐单订阅 | 按条件选择的 sink/printer、Logger |
 | `application` | 启动依赖图、将 Controller 接入 Gin、管理关闭流程 | ApplicationContext |
@@ -176,7 +176,8 @@ func New(
 
 ```go
 // API adapts JSON requests to the same use cases used by HTML forms.
-// +ioc:component
+// +ioc:controller
+// +ioc:http:route=/api
 type API struct {
 	// +ioc:inject:name=orders
 	orders *service.Service
@@ -203,7 +204,7 @@ make build
 
 ```text
 nemoctl generate --roots ./internal/configuration
-ioctl generate --entry ./cmd/coffee --roots ./internal/...
+ginctl generate --entry ./cmd/coffee --roots ./internal/...
 ```
 
 IoC 进行类型分析前，需要已有 Nemo 生成的方法。IoC 将包适配器写入声明所在包，
@@ -223,15 +224,36 @@ IoC 进行类型分析前，需要已有 Nemo 生成的方法。IoC 将包适配
    生成的定义。
 2. 调用 `Start(ctx)` 求值条件、绑定并校验活动依赖图，再初始化 Settings、Database、
    迁移、Service 和 Controller 等非延迟 Bean。
-3. 通过类型化 `GetBean[T]` 获取 API、Pages、Settings 和 Logger。
-4. 调用 `gin.New()`，先安装 Recovery，再安装 RequestScope，注册 Controller 路由，
-   最后以 `http.CrossOriginProtection` 包装路由。
+3. 通过类型化 `GetBean[T]` 获取 Settings 和 Logger。
+4. 创建 `gin.New()`，依次安装 Recovery 和 RequestScope，再调用适配器的
+   `router.Register`，最后以 `http.CrossOriginProtection` 包装路由。
 
-IoC 提供 Controller 及其依赖，路由由应用显式注册。`API.Register` 和
-`Pages.Register` 将方法接入 Gin。
+Controller 上的 `+ioc:http:route=/api` 定义公共前缀，方法注解声明相对路径：
 
-> **待办：参考 Spring 的 `GetMapping` 等映射注解，根据声明 HTTP 方法和路径的
-> 注释注解，生成 Handler 与路由注册代码。**
+```go
+// +ioc:http:get=/orders/:id
+func (a *API) get(ctx *gin.Context) {
+	id, err := positive(ctx.Param(idParameter))
+	if err != nil {
+		apiError(ctx, err)
+		return
+	}
+	order, err := a.orders.Get(ctx.Request.Context(), id)
+	if err != nil {
+		apiError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, order)
+}
+```
+
+该声明注册 `GET /api/orders/:id`。生成器在 Controller 包内写入类型化桥接代码，
+私有方法无需导出。`Pages` 使用相同机制声明 HTML 端点。两种 Controller 均由
+`+ioc:controller` 注册，无需另加 `+ioc:component`。
+
+`cmd/coffee` 将生成的 `IOCGinRoutes()` 传给 `application.Run`，装配层在容器
+启动后注册活动路由。条件排除的 Controller 不发布路由；活动映射冲突时启动失败。
+作用域和 HTTP 服务的所有权仍由应用管理，不在 `init` 中打开资源或启动监听。
 
 `application.Run` 在装配成功后创建 HTTP 服务。关闭时先停止接收请求，等待活动
 HTTP 请求完成，再关闭依赖图。排空等待上限为五秒；超时后关闭 HTTP 连接并返回
@@ -262,8 +284,8 @@ func NewOperation(ctx context.Context) (*model.Operation, error) {
 ```
 
 [RequestScope][coffee-examples-coffee-internal-application-scope-go] 生成关联 ID，放入派生的标准
-Context，再调用 `OpenScope(parent, gs.Request)`。它通过
-`ctx.Request.WithContext(operation)` 替换请求后执行后续处理器。
+Context，再由适配器的 `scope.Middleware` 调用
+`OpenScope(parent, gs.Request)`，将派生 Context 写入请求后执行处理器。
 Controller 将 `ctx.Request.Context()` 传给 Service，Provider 据此解析当前请求的
 Operation；改用后台 Context 会丢失作用域能力。
 

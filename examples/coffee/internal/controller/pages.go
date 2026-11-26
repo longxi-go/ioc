@@ -16,6 +16,7 @@ package controller
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -27,25 +28,13 @@ import (
 )
 
 // Pages keeps HTML routing and view models outside business logic.
-// +ioc:component
+// +ioc:controller
+// +ioc:http:route=/
 type Pages struct {
 	// +ioc:inject
 	orders *service.Service
 	// +ioc:inject
 	view *view.Renderer
-}
-
-func (p *Pages) Register(router *gin.Engine) {
-	router.GET(IndexPath, p.list)
-	router.GET(NewOrderPath, p.newOrder)
-	router.GET(OrderPath, p.get)
-	router.GET(StylesheetPath, p.styles)
-	router.POST(OrdersPath, p.create)
-	router.POST(OrderPath+"/update", p.update)
-	router.POST(OrderPath+"/delete", p.delete)
-	for _, action := range workflow() {
-		router.POST(OrderPath+"/"+action.Path, p.transition(action.Target))
-	}
 }
 
 func (p *Pages) render(ctx *gin.Context, status int, name string, page view.Page) {
@@ -57,6 +46,7 @@ func (p *Pages) render(ctx *gin.Context, status int, name string, page view.Page
 	ctx.Data(status, HTMLContentType, body)
 }
 
+// +ioc:http:get=/assets/style.css
 func (*Pages) styles(ctx *gin.Context) {
 	body, err := view.Stylesheet()
 	if err != nil {
@@ -66,6 +56,7 @@ func (*Pages) styles(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, CSSContentType, body)
 }
 
+// +ioc:http:get=/orders/new
 func (p *Pages) newOrder(ctx *gin.Context) {
 	p.render(ctx, http.StatusOK, view.NewOrder, view.Page{
 		Title: "New order",
@@ -88,6 +79,7 @@ func pagination(query model.Query, offset int) string {
 	return IndexPath + "?" + values.Encode()
 }
 
+// +ioc:http:get=/
 func (p *Pages) list(ctx *gin.Context) {
 	query, err := listQuery(ctx)
 	if err != nil {
@@ -104,7 +96,8 @@ func (p *Pages) list(ctx *gin.Context) {
 		Orders: result.Orders,
 		Total:  result.Total,
 	}
-	if int64(query.Offset)+int64(query.Limit) < result.Total {
+	remaining := result.Total - int64(query.Offset)
+	if int64(query.Limit) < remaining && query.Offset <= math.MaxInt-query.Limit {
 		page.Next = pagination(query, query.Offset+query.Limit)
 	}
 	if query.Offset > 0 {
@@ -113,6 +106,7 @@ func (p *Pages) list(ctx *gin.Context) {
 	p.render(ctx, http.StatusOK, view.Index, page)
 }
 
+// +ioc:http:get=/orders/:id
 func (p *Pages) get(ctx *gin.Context) {
 	id, err := positive(ctx.Param(idParameter))
 	if err != nil {
@@ -146,6 +140,7 @@ func redirect(ctx *gin.Context, order model.Order) {
 	ctx.Redirect(http.StatusSeeOther, fmt.Sprintf(orderLocationFormat, order.ID))
 }
 
+// +ioc:http:post=/orders
 func (p *Pages) create(ctx *gin.Context) {
 	input, err := decodeForm(ctx)
 	if err != nil {
@@ -164,6 +159,7 @@ func (p *Pages) create(ctx *gin.Context) {
 	redirect(ctx, order)
 }
 
+// +ioc:http:post=/orders/:id/update
 func (p *Pages) update(ctx *gin.Context) {
 	input, err := decodeForm(ctx)
 	if err != nil {
@@ -186,30 +182,29 @@ func (p *Pages) update(ctx *gin.Context) {
 	redirect(ctx, order)
 }
 
-func (p *Pages) transition(target model.Status) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		input, err := decodeForm(ctx)
-		if err != nil {
-			p.fail(ctx, err)
-			return
-		}
-		token, err := mutation(ctx, input.Version)
-		if err != nil {
-			p.fail(ctx, err)
-			return
-		}
-		order, err := p.orders.Transition(ctx.Request.Context(), model.Change{
-			Mutation: token,
-			To:       target,
-		})
-		if err != nil {
-			p.fail(ctx, err)
-			return
-		}
-		redirect(ctx, order)
+func (p *Pages) transition(ctx *gin.Context, target model.Status) {
+	input, err := decodeForm(ctx)
+	if err != nil {
+		p.fail(ctx, err)
+		return
 	}
+	token, err := mutation(ctx, input.Version)
+	if err != nil {
+		p.fail(ctx, err)
+		return
+	}
+	order, err := p.orders.Transition(ctx.Request.Context(), model.Change{
+		Mutation: token,
+		To:       target,
+	})
+	if err != nil {
+		p.fail(ctx, err)
+		return
+	}
+	redirect(ctx, order)
 }
 
+// +ioc:http:post=/orders/:id/delete
 func (p *Pages) delete(ctx *gin.Context) {
 	input, err := decodeForm(ctx)
 	if err != nil {

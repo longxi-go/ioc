@@ -27,7 +27,7 @@ application plans; it contains no Bean instances.
 `internal/container` binds dependency graphs, coordinates creation and cleanup,
 and checks lifecycle state. `internal/eventdispatch` prepares and delivers
 synchronous events. `pkg/codegen` is the public compiler API; `internal/command`
-and `cmd/ioctl` provide the CLI. Runtime packages do not import the compiler or
+and `cmd/ioctl` provide the core CLI through shared `pkg/cli`. Runtime packages do not import the compiler or
 application packages.
 
 Generated `init` functions register definitions and plans without constructing
@@ -120,6 +120,9 @@ There are two automatic injection paths:
 | --- | --- |
 | `+ioc:bean` | Resolve parameters and call a package-level function returning `T` or `(T, error)` |
 | `+ioc:component` | Resolve annotated fields, allocate `&T{}` and assign those fields |
+
+`+ioc:controller` specializes component registration and uses the same field
+injection path. Its HTTP mappings are compiled by the selected native backend.
 
 A factory result does not receive a separate field-injection pass. Annotating both
 a struct and its factory registers two definitions, not two stages of one Bean.
@@ -330,3 +333,16 @@ replacement validation cleans up the original allocation. Lifecycle adapters
 remain statically tied to the declared result; decoration is not arbitrary method
 interception. The reserved local event publisher and Environment cannot be decorated or replaced
 as primary; named publisher alternatives are supported.
+
+## HTTP generation boundary
+
+The public `pkg/codegen/http` model connects common HTTP analysis to a native
+backend selected through `codegen.Options.HTTP`. `ginctl` composes the Gin backend
+statically; the core container and root `ioctl` do not import Gin. A backend
+returns Go source for the common notice, formatting, overlay-validation and
+output pipeline. Import composition resolves declared package names in the
+selected module and reconciles aliases without rewriting local shadow variables.
+
+Gin runtime routing and scope packages do not depend on the compiler. Registration
+uses the started application's active Bean definitions; Controller lookup uses
+the request context. See [HTTP and Gin](http.md) for the complete rules.

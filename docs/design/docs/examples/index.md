@@ -17,7 +17,7 @@ flowchart LR
 | [Events](https://github.com/longxi-go/ioc/tree/main/examples/events) | Typed subscriptions and listener ordering | Root module: `go run ./examples/events` |
 | [Environment](https://github.com/longxi-go/ioc/tree/main/examples/environment) | Prepared Environment and typed configuration access | Root module: `go run ./examples/environment` |
 | [Prerequisites](https://github.com/longxi-go/ioc/tree/main/examples/prerequisites) | Named initialization prerequisites | Root module: `go run ./examples/prerequisites` |
-| [Gin integration](gin.md) | Managed handler, singleton Provider, per-request identity and cleanup | Independent module: `cd examples/gin && make run` |
+| [Gin integration](gin.md) | Generated HTTP routing, singleton Provider, per-request identity and cleanup | Independent module: `cd examples/gin && make run` |
 | [Coffee MVC](coffee.md) | Nemo binding, SQLite, HTML/REST, conditional Beans and typed events | Independent module: `cd examples/coffee && make run` |
 
 [Gin](gin.md) manages Request scopes around handler execution. [Coffee](coffee.md)

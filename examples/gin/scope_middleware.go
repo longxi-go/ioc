@@ -20,32 +20,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 	gs "github.com/longxi-go/gosr/pkg/ioc"
+	ginscope "github.com/longxi-go/ioc/adaptors/gin/pkg/scope"
 )
 
 const cleanupTimeout = 5 * time.Second
 
-// RequestScope closes the lifetime on every downstream exit, including panic.
-// Install Gin Recovery before this middleware so unwinding releases the scope
-// before Recovery writes its response. Callers must supply a valid error sink.
-func RequestScope(manager gs.ScopeManager, report ErrorHandlerFunc) gin.HandlerFunc {
+// RequestScope attaches tenant metadata before the adapter opens its Request scope.
+// Install Recovery before this middleware; the caller drains HTTP before Close.
+func RequestScope(manager gs.ScopeManager, report ErrorHandlerFunc) (gin.HandlerFunc, error) {
+	scoped, err := ginscope.Middleware(ginscope.Options{
+		Manager: manager,
+		OnError: report,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return func(ctx *gin.Context) {
 		parent := context.WithValue(ctx.Request.Context(), tenantKey{}, ctx.GetHeader(tenantHeader))
-		request, scope, err := manager.OpenScope(parent, gs.Request)
-		if err != nil {
-			report(err)
-			unavailable(ctx)
-			return
+		ctx.Request = ctx.Request.WithContext(parent)
+		scoped(ctx)
+		for _, failure := range ctx.Errors {
+			report(failure.Err)
 		}
-		defer closeScope(request, scope, report)
-		ctx.Request = ctx.Request.WithContext(request)
-		ctx.Next()
-	}
-}
-
-func closeScope(parent context.Context, scope gs.Scope, report ErrorHandlerFunc) {
-	cleanup, cancel := context.WithTimeout(context.WithoutCancel(parent), cleanupTimeout)
-	defer cancel()
-	if err := scope.Close(cleanup); err != nil {
-		report(err)
-	}
+	}, nil
 }

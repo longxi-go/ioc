@@ -6,7 +6,7 @@ override export GOWORK := off
 override export GOTOOLCHAIN := local
 IOC := github.com/longxi-go/ioc
 NEMO := github.com/longxi-go/nemo
-IOC_VERSION := $(shell GOWORK=off GOTOOLCHAIN=local $(GO) list -m -f '{{.Version}}' $(IOC))
+GIN := $(IOC)/adaptors/gin
 NEMO_VERSION := $(shell GOWORK=off GOTOOLCHAIN=local $(GO) list -m -f '{{.Version}}' $(NEMO))
 
 .PHONY: help setup generate check-generated format check-format verify-mod vet test race lint check build run
@@ -29,10 +29,10 @@ setup:
 	$(MAKE) -C ../.. setup
 generate:
 	$(GO) run $(NEMO)/cmd/nemoctl@$(NEMO_VERSION) generate --roots ./internal/configuration
-	$(GO) run $(IOC)/cmd/ioctl@$(IOC_VERSION) generate --entry ./cmd/coffee --roots ./internal/...
+	$(GO) tool $(GIN)/cmd/ginctl generate --entry ./cmd/coffee --roots ./internal/...
 check-generated:
 	$(GO) run $(NEMO)/cmd/nemoctl@$(NEMO_VERSION) check --roots ./internal/configuration
-	$(GO) run $(IOC)/cmd/ioctl@$(IOC_VERSION) check --entry ./cmd/coffee --roots ./internal/...
+	$(GO) tool $(GIN)/cmd/ginctl check --entry ./cmd/coffee --roots ./internal/...
 format:
 	$(MAKE) -C ../.. format
 check-format:

@@ -17,13 +17,6 @@ package controller
 import "github.com/longxi-go/ioc/examples/coffee/internal/model"
 
 const (
-	APIOrders           = "/api/orders"
-	APIOrder            = "/api/orders/:id"
-	MenuPath            = "/api/menu"
-	OrdersPath          = "/orders"
-	OrderPath           = "/orders/:id"
-	NewOrderPath        = "/orders/new"
-	StylesheetPath      = "/assets/style.css"
 	IndexPath           = "/"
 	orderLocationFormat = "/orders/%d"
 	apiLocationFormat   = "/api/orders/%d"

@@ -73,6 +73,7 @@ plugins:
                 - 快速开始: quick-start.md
                 - 注解参考: annotations.md
                 - Environment: environment.md
+                - HTTP 与 Gin: http.md
             - 示例:
                 - 示例索引: examples/index.md
                 - Gin 请求作用域: examples/gin.md
@@ -124,6 +125,7 @@ nav:
       - Quick Start: quick-start.md
       - Annotation Reference: annotations.md
       - Environment: environment.md
+      - HTTP and Gin: http.md
   - Examples:
       - Example Index: examples/index.md
       - Gin Request Scopes: examples/gin.md

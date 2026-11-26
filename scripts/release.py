@@ -3,6 +3,7 @@
 import argparse
 import fnmatch
 import json
+from dataclasses import dataclass
 from pathlib import Path
 import re
 import subprocess
@@ -23,48 +24,82 @@ DEPENDENCY_REPOSITORIES = {
 }
 
 
-def dependencies(root: Path) -> dict:
+@dataclass(frozen=True)
+class ReleaseModule:
+    """Keep a module's tag, notes and Latest ownership in one definition."""
+
+    directory: str
+    prefix: str
+    title: str
+    dependencies: dict
+
+
+RELEASE_MODULES = {
+    "root": ReleaseModule("", "", "ioc", DEPENDENCY_REPOSITORIES),
+    "gin": ReleaseModule("adaptors/gin", "adaptors/gin/", "ioc Gin adapter", {
+        MODULE: (REPOSITORY, ""),
+    }),
+}
+
+
+def release_module(module: str) -> ReleaseModule:
+    try:
+        return RELEASE_MODULES[module]
+    except KeyError as error:
+        raise ValueError(f"Unknown release module: {module}") from error
+
+
+def dependencies(root: Path, module: str = "root") -> dict:
     """Reject workspace substitutes and require published-version candidates."""
-    module = read_module(root / "go.mod")
-    if (module.get("Module") or {}).get("Path") != MODULE:
-        raise ValueError(f"Expected module {MODULE}")
-    if module.get("Replace"):
+    profile = release_module(module)
+    metadata = read_module(root / profile.directory / "go.mod")
+    expected = MODULE + ("/" + profile.directory if profile.directory else "")
+    if (metadata.get("Module") or {}).get("Path") != expected:
+        raise ValueError(f"Expected module {expected}")
+    if metadata.get("Replace"):
         raise ValueError("Release dependencies must not use module replacements")
-    versions = {item["Path"]: item["Version"] for item in module.get("Require") or []}
-    for path in DEPENDENCY_REPOSITORIES:
+    versions = {item["Path"]: item["Version"] for item in metadata.get("Require") or []}
+    for path in profile.dependencies:
         version = versions.get(path, "")
-        if not STABLE_TAG.fullmatch(version) or version == "v0.0.0":
+        match = STABLE_TAG.fullmatch(version)
+        if match is None or version == "v0.0.0" or int(match[1]) >= 2:
             raise ValueError(f"A stable published dependency version is required for {path}")
     return versions
 
 
-def validate_tag(root: Path, tag: str) -> str:
-    """Validate the version, module identity and maintained notes before tagging."""
-    match = STABLE_TAG.fullmatch(tag)
+def validate_tag(root: Path, tag: str, module: str = "root") -> str:
+    """Validate a module's immutable tag, identity and maintained notes."""
+    profile = release_module(module)
+    if not tag.startswith(profile.prefix):
+        raise ValueError(f"{module} tags must begin with {profile.prefix or 'v'}")
+    version = tag[len(profile.prefix):]
+    match = STABLE_TAG.fullmatch(version)
     if match is None:
         raise ValueError("Release tags must use stable vX.Y.Z versions without leading zeroes")
     if int(match[1]) >= 2:
         raise ValueError("v2+ requires a versioned module path and a release-policy update")
-    dependencies(root)
-    notes = root / "docs/releases" / f"{tag}.md"
+    dependencies(root, module)
+    notes = root / profile.directory / "docs/releases" / f"{version}.md"
     if not notes.is_file():
         raise ValueError(f"Missing release notes: {notes}")
     lines = notes.read_text(encoding="utf-8").strip().splitlines()
-    if not lines or lines[0] != f"# ioc {tag}" or not "\n".join(lines[1:]).strip():
-        raise ValueError("Release notes require a matching ioc tag title and a body")
-    return tag[1:]
+    title = f"# {profile.title} {version}"
+    if not lines or lines[0] != title or not "\n".join(lines[1:]).strip():
+        raise ValueError(f"Release notes require a matching {profile.title} tag title and a body")
+    return version[1:]
 
 
-def release_payload(root: Path, tag: str) -> dict:
-    """Keep maintained notes and an explicit GitHub Latest-selection policy."""
-    validate_tag(root, tag)
+def release_payload(root: Path, tag: str, module: str = "root") -> dict:
+    """Preserve module-specific notes; only root releases can own Latest."""
+    profile = release_module(module)
+    version = "v" + validate_tag(root, tag, module)
     return {
         "tag_name": tag,
-        "name": f"ioc {tag}",
-        "body": (root / "docs/releases" / f"{tag}.md").read_text(encoding="utf-8"),
+        "name": f"{profile.title} {version}",
+        "body": (root / profile.directory / "docs/releases" / f"{version}.md").read_text(encoding="utf-8"),
         "draft": False,
         "prerelease": False,
-        "make_latest": "true",
+        "make_latest": "true" if module == "root" else "false",
     }
 
 
@@ -125,10 +160,10 @@ def check_pages(repository: str, tag: str) -> None:
         raise ValueError(f"github-pages environment does not allow tag {tag}; add a v* tag rule")
 
 
-def check_dependencies(root: Path) -> None:
+def check_dependencies(root: Path, module: str = "root") -> None:
     """Check stable upstream Releases separately from Go's checksum verification."""
-    versions = dependencies(root)
-    for path, (repository, prefix) in DEPENDENCY_REPOSITORIES.items():
+    versions = dependencies(root, module)
+    for path, (repository, prefix) in release_module(module).dependencies.items():
         tag = prefix + versions[path]
         data = github_json(f"repos/{repository}/releases/tags/{tag}")
         if data.get("tag_name") != tag or data.get("draft") is not False or data.get("prerelease") is not False:
@@ -139,17 +174,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--tag", required=True)
+    parser.add_argument("--module", choices=tuple(RELEASE_MODULES), default="root")
     parser.add_argument("--check-github", action="store_true")
     parser.add_argument("--github-payload", type=Path)
     parser.add_argument("--repository", default=REPOSITORY)
     args = parser.parse_args()
     try:
-        version = validate_tag(args.root, args.tag)
+        version = validate_tag(args.root, args.tag, args.module)
         if args.check_github:
-            check_pages(args.repository, args.tag)
-            check_dependencies(args.root)
+            if args.module == "root":
+                check_pages(args.repository, args.tag)
+            check_dependencies(args.root, args.module)
         if args.github_payload:
-            args.github_payload.write_text(json.dumps(release_payload(args.root, args.tag)) + "\n", encoding="utf-8")
+            args.github_payload.write_text(json.dumps(release_payload(args.root, args.tag, args.module)) + "\n", encoding="utf-8")
         print(version)
     except (ValueError, OSError) as error:
         parser.error(str(error))

@@ -2,11 +2,11 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v*', 'adaptors/gin/v*']
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Stable release tag to publish or verify (vX.Y.Z)
+        description: Stable root or Gin adapter tag to publish or verify
         required: true
         type: string
 
@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-root
+  group: release-${{ startsWith(inputs.release_tag || github.ref_name, 'adaptors/gin/') && 'gin' || 'root' }}
   cancel-in-progress: false
 
 jobs:
@@ -27,6 +27,7 @@ jobs:
       actions: read
       pages: read
     outputs:
+      module: ${{ steps.source.outputs.module }}
       tag: ${{ steps.source.outputs.tag }}
       commit: ${{ steps.source.outputs.commit }}
     steps:
@@ -50,8 +51,11 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
-          python3 scripts/release.py --root release-source --tag "$RELEASE_TAG" \
+          module=root
+          if [[ "$RELEASE_TAG" == adaptors/gin/* ]]; then module=gin; fi
+          python3 scripts/release.py --root release-source --module "$module" --tag "$RELEASE_TAG" \
             --check-github --repository "$GITHUB_REPOSITORY"
+          echo "module=$module" >> "$GITHUB_OUTPUT"
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "commit=$(git -C release-source rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
@@ -91,16 +95,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
           RELEASE_COMMIT: ${{ needs.validate.outputs.commit }}
+          RELEASE_MODULE: ${{ needs.validate.outputs.module }}
         run: |
           set -euo pipefail
-          python3 scripts/publish_release.py --root release-source \
+          python3 scripts/publish_release.py --root release-source --module "$RELEASE_MODULE" \
             --repository "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" \
             --commit "$RELEASE_COMMIT" >> "$GITHUB_OUTPUT"
 
   deploy-site:
     name: Deploy released documentation
     needs: [validate, publish]
-    if: needs.publish.outputs.latest == 'true'
+    if: needs.validate.outputs.module == 'root' && needs.publish.outputs.latest == 'true'
     permissions:
       contents: read
       actions: read

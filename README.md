@@ -55,7 +55,7 @@ cleanup Context. Do not retain callback contexts; Context fields cannot be injec
 
 | Example | Coverage | Guide |
 | --- | --- | --- |
-| [Gin integration](examples/gin/) | Minimal router assembly, request Provider and scope cleanup | [Gin request scopes](examples/gin/README.md) |
+| [Gin integration](examples/gin/) | Generated HTTP routing, request Provider and scope cleanup | [Gin request scopes](examples/gin/README.md) |
 | [Coffee MVC](examples/coffee/) | Nemo binding, SQLite, HTML/REST, conditional Beans and events | [Coffee application integration](examples/coffee/docs/integration.md) |
 
 Both are independent modules. Run `make run` and `make check` in their respective
@@ -76,6 +76,7 @@ including targets, defaults, repeatability and invalid combinations.
 | Initialization prerequisites | Named/alias depends-on targets finish Init before dependent construction, including lazy targets |
 | Events | Typed synchronous listeners, instance ordering and lifecycle barriers |
 | Configuration | Built-in Nemo Environment, Gosr interface injection, startup snapshot conditions and profiles |
+| HTTP | Controller and route annotations, typed Gin bridges and request scope integration in a separate adapter module |
 | Composition | Library-owned adapters/metadata, application-owned entry plan and query dispatch |
 
 Conditional registrations use explicit attributes:
@@ -130,13 +131,35 @@ incompatible variants require regeneration. See
 ownership and compatibility rules, and [events](docs/design/docs/events.md) for
 delivery and ordering.
 
-Dynamic graph refresh, automatic configuration rebinding, built-in Web framework adapters,
-early-exposed circular objects and arbitrary method interception are outside the
+Dynamic graph refresh, automatic configuration rebinding, early-exposed circular objects and arbitrary method interception are outside the
 current container. Public APIs use the module version. Generated Bean registrations
 use a separately checked schema/ABI. Upgrade the CLI and runtime together and
 regenerate application/library output when that ABI changes. Version 0.x may introduce API
 changes between minor versions; pin versions and review changes when upgrading.
 The [roadmap](docs/roadmap.md) separates current capabilities from future work.
+
+## HTTP and Gin
+
+Declare Controllers and HTTP routes in source comments. The adapter-enabled
+`ginctl` generates typed route registration:
+
+```go
+// +ioc:controller:name=healthController
+// +ioc:http:route=/api/v1/
+type HealthController struct{}
+
+// +ioc:http:get=/healthz
+func (*HealthController) health(ctx *gin.Context) {
+    ctx.Status(http.StatusOK)
+}
+```
+
+This declaration maps `GET /api/v1/healthz` and requires imports for `net/http`
+and Gin. The adapter is a separate module,
+`github.com/longxi-go/ioc/adaptors/gin`; the root module does not depend on Gin.
+See the [HTTP and Gin guide](docs/design/docs/http.md), the
+[Gin integration](examples/gin/README.md) and the
+[Coffee MVC application](examples/coffee/docs/integration.md).
 
 ## Development and verification
 
@@ -145,6 +168,7 @@ make setup
 make format
 make check-format
 make check
+make check-adapters
 make docs-build
 ```
 

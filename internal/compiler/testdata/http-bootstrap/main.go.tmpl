@@ -1,0 +1,12 @@
+package main
+
+// +ioc:http:get=/health
+func health() {}
+
+var answer int = HTTPGenerated()
+
+func main() {
+	if answer != 42 {
+		panic(answer)
+	}
+}

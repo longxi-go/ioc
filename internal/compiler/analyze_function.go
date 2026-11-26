@@ -18,6 +18,8 @@ import (
 	"errors"
 	"go/ast"
 	"go/types"
+
+	"github.com/longxi-go/ioc/internal/httpcompiler"
 )
 
 const (
@@ -35,6 +37,12 @@ func (analysis *packageAnalysis) function(d *ast.FuncDecl) error {
 	a, err := readMarkers(pkg.Fset, d.Doc, declarationTarget)
 	if err != nil {
 		return at(pkg, d.Pos(), err)
+	}
+	if a.flag(httpcompiler.Controller) {
+		return at(pkg, d.Pos(), errors.New(componentMarkerRequiresAStructMessage))
+	}
+	if hasHTTP(a) {
+		return validateHTTPFunction(pkg, d, a)
 	}
 	if a.flag(markerComponent) {
 		return at(pkg, d.Pos(), errors.New(componentMarkerRequiresAStructMessage))

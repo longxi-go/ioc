@@ -20,6 +20,7 @@ import (
 	"go/types"
 
 	sourceannotation "github.com/longxi-go/gosr/tools/pkg/annotation"
+	"github.com/longxi-go/ioc/internal/httpcompiler"
 )
 
 const (
@@ -42,6 +43,9 @@ func (analysis *packageAnalysis) types(d *ast.GenDecl) error {
 		if err != nil {
 			return at(pkg, ts.Pos(), err)
 		}
+		if a.flag(httpcompiler.Controller) && (a.flag(markerComponent) || a.flag(markerBean)) {
+			return at(pkg, ts.Pos(), errors.New(controllerExclusiveMessage))
+		}
 		if a.flag(markerBean) {
 			return at(pkg, ts.Pos(), errors.New(beanMarkerRequiresAFunctionMessage))
 		}
@@ -51,7 +55,10 @@ func (analysis *packageAnalysis) types(d *ast.GenDecl) error {
 		if a.flag(markerListen) {
 			return at(pkg, ts.Pos(), errors.New(listenRequiresAReceiverMethodMessage))
 		}
-		if !a.flag(markerComponent) {
+		if hasHTTP(a) && !a.flag(httpcompiler.Controller) {
+			return at(pkg, ts.Pos(), errors.New(httpBaseRequiresControllerMessage))
+		}
+		if !a.flag(markerComponent) && !a.flag(httpcompiler.Controller) {
 			if len(a) > 0 {
 				return at(pkg, ts.Pos(), errors.New(missingComponentMarkerMessage))
 			}
@@ -79,6 +86,11 @@ func (analysis *packageAnalysis) types(d *ast.GenDecl) error {
 
 		if err := completeRecipe(pkg, r, a, ts.Pos()); err != nil {
 			return err
+		}
+		if a.flag(httpcompiler.Controller) {
+			if err := analysis.controller(r, a, ts.Pos()); err != nil {
+				return err
+			}
 		}
 		analysis.model.Recipes = append(analysis.model.Recipes, r)
 	}

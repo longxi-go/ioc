@@ -24,28 +24,19 @@ import (
 )
 
 // API adapts JSON requests to the same use cases used by HTML forms.
-// +ioc:component
+// +ioc:controller
+// +ioc:http:route=/api
 type API struct {
 	// +ioc:inject:name=orders
 	orders *service.Service
 }
 
-func (a *API) Register(router *gin.Engine) {
-	router.GET(MenuPath, a.menu)
-	router.POST(APIOrders, a.create)
-	router.GET(APIOrders, a.list)
-	router.GET(APIOrder, a.get)
-	router.PUT(APIOrder, a.update)
-	router.DELETE(APIOrder, a.delete)
-	for _, action := range workflow() {
-		router.POST(APIOrder+"/"+action.Path, a.transition(action.Target))
-	}
-}
-
+// +ioc:http:get=/menu
 func (*API) menu(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, model.Menu())
 }
 
+// +ioc:http:post=/orders
 func (a *API) create(ctx *gin.Context) {
 	var input detailsInput
 	if err := decodeJSON(ctx, &input); err != nil {
@@ -65,6 +56,7 @@ func (a *API) create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, order)
 }
 
+// +ioc:http:get=/orders
 func (a *API) list(ctx *gin.Context) {
 	query, err := listQuery(ctx)
 	if err != nil {
@@ -79,6 +71,7 @@ func (a *API) list(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, page)
 }
 
+// +ioc:http:get=/orders/:id
 func (a *API) get(ctx *gin.Context) {
 	id, err := positive(ctx.Param(idParameter))
 	if err != nil {
@@ -93,6 +86,7 @@ func (a *API) get(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, order)
 }
 
+// +ioc:http:put=/orders/:id
 func (a *API) update(ctx *gin.Context) {
 	var input detailsInput
 	if err := decodeJSON(ctx, &input); err != nil {
@@ -115,30 +109,29 @@ func (a *API) update(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, order)
 }
 
-func (a *API) transition(target model.Status) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		var input versionInput
-		if err := decodeJSON(ctx, &input); err != nil {
-			apiError(ctx, err)
-			return
-		}
-		token, err := mutation(ctx, input.Version)
-		if err != nil {
-			apiError(ctx, err)
-			return
-		}
-		order, err := a.orders.Transition(ctx.Request.Context(), model.Change{
-			Mutation: token,
-			To:       target,
-		})
-		if err != nil {
-			apiError(ctx, err)
-			return
-		}
-		ctx.JSON(http.StatusOK, order)
+func (a *API) transition(ctx *gin.Context, target model.Status) {
+	var input versionInput
+	if err := decodeJSON(ctx, &input); err != nil {
+		apiError(ctx, err)
+		return
 	}
+	token, err := mutation(ctx, input.Version)
+	if err != nil {
+		apiError(ctx, err)
+		return
+	}
+	order, err := a.orders.Transition(ctx.Request.Context(), model.Change{
+		Mutation: token,
+		To:       target,
+	})
+	if err != nil {
+		apiError(ctx, err)
+		return
+	}
+	ctx.JSON(http.StatusOK, order)
 }
 
+// +ioc:http:delete=/orders/:id
 func (a *API) delete(ctx *gin.Context) {
 	version, err := positive(ctx.Query(versionField))
 	if err != nil {

@@ -18,13 +18,53 @@ package main
 
 import (
 	context "context"
+	http "net/http"
 
+	gin "github.com/gin-gonic/gin"
 	ioc11ba51f4d5 "github.com/longxi-go/gosr/pkg/environment"
 	iocc00980548b "github.com/longxi-go/gosr/pkg/event"
 	gs "github.com/longxi-go/gosr/pkg/ioc"
+	router "github.com/longxi-go/ioc/adaptors/gin/pkg/router"
 	bean "github.com/longxi-go/ioc/pkg/bean"
 	catalog "github.com/longxi-go/ioc/pkg/catalog"
 )
+
+func IOCGinPackageRoutes() []router.Route {
+	return []router.Route{
+		{
+			Method: "GET",
+			Path:   "/request",
+			Bean:   "github.com/longxi-go/ioc/examples/gin.Handler",
+			Bind: func(factory gs.BeanFactory) gin.HandlerFunc {
+				return func(c *gin.Context) {
+					value, err := factory.Lookup(c.Request.Context(), gs.Selector{
+						Name:     "requestHandler",
+						Contract: "*github.com/longxi-go/ioc/examples/gin.Handler",
+					})
+					if err != nil {
+						_ = c.Error(err)
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller, ok := value.(*Handler)
+					if !ok || controller == nil {
+						_ = c.Error(&gs.Error{
+							Code: gs.ContractMismatch,
+						})
+						c.AbortWithStatus(http.StatusServiceUnavailable)
+						return
+					}
+					controller.serve(c)
+				}
+			},
+		},
+	}
+}
+
+func IOCGinRoutes() []router.Route {
+	routes := IOCGinPackageRoutes()
+	return routes
+}
 
 func init() {
 	catalog.Default().Contribute(bean.Batch{
@@ -33,8 +73,8 @@ func init() {
 		Registrations: []bean.Registration{
 			{
 				Definition: gs.BeanDefinition{
-					ID:         "github.com/longxi-go/ioc/examples/gin.NewHandler",
-					Name:       "NewHandler",
+					ID:         "github.com/longxi-go/ioc/examples/gin.Handler",
+					Name:       "requestHandler",
 					Aliases:    []string{},
 					Qualifiers: []string{},
 					Contracts: []gs.Contract{
@@ -52,7 +92,7 @@ func init() {
 							Source: gs.Source{
 								Package: "github.com/longxi-go/ioc/examples/gin",
 								File:    "handler.go",
-								Line:    40,
+								Line:    37,
 							},
 						},
 					},
@@ -64,7 +104,7 @@ func init() {
 					Source: gs.Source{
 						Package: "github.com/longxi-go/ioc/examples/gin",
 						File:    "handler.go",
-						Line:    40,
+						Line:    35,
 					},
 				},
 				Accept: func(value any) bool {
@@ -99,10 +139,8 @@ func init() {
 					if err != nil {
 						return nil, err
 					}
-					value := NewHandler(arg0)
-					if value == nil {
-						return nil, nil
-					}
+					value := &Handler{}
+					value.service = arg0
 					return value, nil
 				},
 			},
@@ -299,7 +337,7 @@ func init() {
 	catalog.Default().Install(bean.Plan{
 		ID: "github.com/longxi-go/ioc/examples/gin",
 		DefinitionIDs: []string{
-			"github.com/longxi-go/ioc/examples/gin.NewHandler",
+			"github.com/longxi-go/ioc/examples/gin.Handler",
 			"github.com/longxi-go/ioc/examples/gin.NewRequest",
 			"github.com/longxi-go/ioc/examples/gin.Service",
 			"github.com/longxi-go/ioc/examples/gin.Statistics",

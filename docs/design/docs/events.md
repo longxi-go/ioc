@@ -27,7 +27,8 @@ func (*Notifications) onPlaced(ctx context.Context, placed OrderPlaced) error {
 
 This declaration fragment assumes `OrderPlaced` implements `event.Event`.
 The [executable example](https://github.com/longxi-go/ioc/tree/main/examples/events)
-contains a complete producer, listeners, startup and cleanup. `listener` subscribes typed OnEvent on an explicitly registered Bean or component. `listen` subscribes an
+contains a complete producer, listeners, startup and cleanup. `listener` subscribes
+typed OnEvent on an explicitly registered Bean. `listen` subscribes an
 explicit method on a managed concrete owner; ordinary OnEvent methods do not
 implicitly subscribe. Both require `(context.Context, E) error`, validated at
 generation time, and generate direct same-package calls. A twice-annotated OnEvent
@@ -64,7 +65,8 @@ scope Close waits for callbacks before resource destruction. Application shutdow
 cancels and drains publications. Nested publication may proceed, but re-entering
 the same active listener along the propagated Context chain produces a publication
 cycle error. Unrelated concurrent publications can invoke the same listener
-concurrently; mutable listeners need synchronization. Pass the callback Context to nested operations; do not retain it after the callback
+concurrently; mutable listeners need synchronization. Pass the callback Context
+to nested operations; do not retain it after the callback
 returns.
 
 ## Event ordering {#event-ordering}
@@ -77,7 +79,8 @@ preserving its instance's priority group. Ordering does not construct unrelated
 listener instances.
 
 `BeanDefinition.Order` (a declaration-level `+ioc:order`) controls
-injected-collection order, not condition or construction order. It does not supply event order. Event instance order
+injected-collection order, not condition or construction order. It does not supply
+event order. Event instance order
 and method overrides do not change Bean selection or collection order.
 
 ## Lifecycle barriers

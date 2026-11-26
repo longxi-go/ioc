@@ -1,0 +1,14 @@
+package main
+
+// +ioc:controller:name=health,aliases={probe}
+// +ioc:scope=request
+// +ioc:http:route=/api/v1/
+type HealthController struct{}
+
+// {{.Route}}
+func (*HealthController) health() {}
+
+// +ioc:http:post=/standalone
+func submit() {}
+
+func main() {}

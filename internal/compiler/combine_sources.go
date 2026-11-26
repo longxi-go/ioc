@@ -20,9 +20,6 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
-	"strconv"
-
-	"github.com/longxi-go/gosr/pkg/codegen/imports"
 )
 
 const (
@@ -33,6 +30,10 @@ const (
 )
 
 func combineSources(adapter, plan []byte) ([]byte, error) {
+	return combineNamedSources(adapter, plan, nil)
+}
+
+func combineNamedSources(adapter, plan []byte, names map[string]string) ([]byte, error) {
 	fs := token.NewFileSet()
 	a, err := parser.ParseFile(fs, adapterDiagnosticFilename, adapter, 0)
 	if err != nil {
@@ -42,20 +43,13 @@ func combineSources(adapter, plan []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	combinedImports := imports.New("", nil)
+	// Compiler-owned imports win collisions to preserve established output aliases.
+	combinedImports, err := fragmentImports(fs, []*ast.File{p, a}, names)
+	if err != nil {
+		return nil, err
+	}
 	decls := []ast.Decl{}
 	for _, file := range []*ast.File{a, p} {
-		for _, imp := range file.Imports {
-			path, err := strconv.Unquote(imp.Path.Value)
-			if err != nil {
-				return nil, err
-			}
-			alias := ""
-			if imp.Name != nil {
-				alias = imp.Name.Name
-			}
-			combinedImports.Add(path, alias)
-		}
 		for _, decl := range file.Decls {
 			if gen, ok := decl.(*ast.GenDecl); ok && gen.Tok == token.IMPORT {
 				continue
@@ -64,7 +58,7 @@ func combineSources(adapter, plan []byte) ([]byte, error) {
 		}
 	}
 	e := newEmitter("")
-	e.imports = combinedImports
+
 	for _, decl := range decls {
 		var b bytes.Buffer
 		if err := format.Node(&b, fs, decl); err != nil {
@@ -79,5 +73,13 @@ func combineSources(adapter, plan []byte) ([]byte, error) {
 			break
 		}
 	}
-	return e.finish(a.Name.Name, constraint)
+	view := fileView{
+		Header:     generatedHeader,
+		Package:    a.Name.Name,
+		Constraint: constraint,
+		Body:       e.body,
+		Imports:    combinedImports,
+	}
+	source, err := executeTemplate(fileTemplate, view)
+	return []byte(source), err
 }

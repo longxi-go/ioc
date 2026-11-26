@@ -9,9 +9,10 @@ preflight requires an authenticated GitHub CLI.
 | Script | Responsibility | Targets |
 | --- | --- | --- |
 | `golayout.py` | Resolve the declared golayout module and delegate formatting, file selection and source notices to its shared scripts | `setup`, `format`, `check-format`, `test-format`, `license-headers`, `check-license-headers` |
+| `check_modules.py` | Check nested Gin and application modules in an isolated checkout copy, using temporary local replacements without changing source metadata | `check-adapters` |
 | `go_environment.py` | Reject process and persistent `GOFLAGS` that can substitute the checked dependency graph | `verify-environment` |
 | `go_module.py` | Parse module declarations using Go without resolving dependencies | Imported helper |
-| `release.py` | Validate stable root tags, module identity, published dependency candidates and maintained notes; optionally read Pages settings and upstream Releases | `validate-release`, `preflight-release` |
+| `release.py` | Validate stable root/adapter tags, module identity, published dependency candidates and maintained notes; optionally read Pages settings and upstream Releases | `validate-release`, `preflight-release` |
 | `publish_release.py` | Verify the tag commit, create or reuse matching release content, and guard Pages against moved tags and superseded releases | Release and Docs Pages workflows |
 
 `make check` disables workspaces and automatic toolchain switching. All Go gates
@@ -73,3 +74,17 @@ workflow dispatched on main needs an allowed main rule in addition to the tag
 policy required by preflight. A superseded release cannot replace the current
 site. These workflows do not change Pages settings or move existing tags;
 configure Pages protection separately.
+
+## Gin adapter releases
+
+The Gin module uses `adaptors/gin/vX.Y.Z` tags and maintained notes in
+`adaptors/gin/docs/releases/vX.Y.Z.md`, headed `# ioc Gin adapter vX.Y.Z`.
+Run `make validate-release MODULE=gin TAG=adaptors/gin/vX.Y.Z` and, after the
+required root version is published,
+`make preflight-release MODULE=gin TAG=adaptors/gin/vX.Y.Z`.
+
+The Release workflow checks out and verifies the exact tagged source for either
+module. Adapter publication requires its declared stable root Release, never
+claims Latest, and does not trigger Pages. Root release tags retain Latest and
+Pages ownership. Recovery uses the same `release_tag` dispatch input with the
+module's complete tag.

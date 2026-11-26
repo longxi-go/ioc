@@ -14,10 +14,14 @@
 
 package compiler
 
-import "github.com/longxi-go/gosr/pkg/pipeline"
+import (
+	"github.com/longxi-go/gosr/pkg/pipeline"
+	http "github.com/longxi-go/ioc/pkg/codegen/http"
+)
 
 const (
 	stagePrepare            = "prepare"
+	stageBootstrapHTTP      = "prepare HTTP declarations"
 	stageCompose            = "compose"
 	stageRender             = "render"
 	stageFinishOutput       = "finish output"
@@ -33,13 +37,18 @@ const (
 func generationSteps(options Options) []pipeline.Step[*generation] {
 	steps := []pipeline.Step[*generation]{
 		pipeline.NewStep(stagePrepare, prepareGeneration),
+	}
+	if _, ok := options.HTTP.(http.Bootstrapper); ok {
+		steps = append(steps, pipeline.NewStep(stageBootstrapHTTP, bootstrapHTTP))
+	}
+	steps = append(steps,
 		pipeline.NewStep(stageAnalyze, analyzeGeneration),
 		pipeline.NewStep(stageCompose, composeGeneration),
 		pipeline.NewStep(stageValidateGraph, validateGenerationGraph),
 		pipeline.NewStep(stageRender, renderGeneration),
 		pipeline.NewStep(stageSourceHeaders, licenseGeneration),
 		pipeline.NewStep(stageFormatGo, formatGeneration),
-	}
+	)
 	if options.Library {
 		// The manifest hashes final adapter bytes. Its generated index is a new
 		// Go artifact and passes through the same formatter before validation.

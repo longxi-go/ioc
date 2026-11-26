@@ -30,7 +30,7 @@ func TestScopeCleanupOnAbortAndPanic(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			app, log := startApplication(t)
 			router := gin.New()
-			router.Use(gin.RecoveryWithWriter(io.Discard), RequestScope(app.context, log.add))
+			router.Use(gin.RecoveryWithWriter(io.Discard), requestScope(t, app.context, log.add))
 			router.GET("/exit", func(ctx *gin.Context) {
 				if _, err := app.handler.Describe(ctx.Request.Context()); err != nil {
 					t.Error(err)
@@ -59,7 +59,7 @@ func TestCancellationAfterAllocationStillCleansScope(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	router := gin.New()
-	router.Use(RequestScope(app.context, log.add))
+	router.Use(requestScope(t, app.context, log.add))
 	router.GET("/cancel", func(c *gin.Context) {
 		if _, err := app.handler.Describe(c.Request.Context()); err != nil {
 			t.Error(err)
@@ -107,7 +107,7 @@ func TestCleanupFailureReportedWithoutRewritingResponse(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	router := gin.New()
-	router.Use(RequestScope(scopeManager{
+	router.Use(requestScope(t, scopeManager{
 		scope: scope,
 	}, log.add))
 	router.GET("/cleanup", func(c *gin.Context) {
@@ -121,4 +121,13 @@ func TestCleanupFailureReportedWithoutRewritingResponse(t *testing.T) {
 	if !errors.Is(errors.Join(log.snapshot()...), failure) {
 		t.Fatalf("cleanup failure lost: %v", log.snapshot())
 	}
+}
+
+func requestScope(t *testing.T, manager gs.ScopeManager, report ErrorHandlerFunc) gin.HandlerFunc {
+	t.Helper()
+	middleware, err := RequestScope(manager, report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return middleware
 }

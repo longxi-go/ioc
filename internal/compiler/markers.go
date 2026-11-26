@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	sourceannotation "github.com/longxi-go/gosr/tools/pkg/annotation"
+	"github.com/longxi-go/ioc/internal/httpcompiler"
 
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -100,6 +101,12 @@ func readMarkers(fs *token.FileSet, group *ast.CommentGroup, target markerTarget
 		markerOrder:         0,
 		markerDependsOn:     "",
 	}
+	definitions[httpcompiler.Controller] = registrationMarker{}
+	definitions[httpcompiler.Marker] = httpcompiler.MarkerValue{}
+	for name := range httpcompiler.Shortcuts() {
+		definitions[name] = ""
+	}
+	group = normalizeHTTPComment(group)
 	definitions[markerListener] = struct{}{}
 	definitions[markerListen] = struct{}{}
 	kind := markers.DescribesType

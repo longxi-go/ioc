@@ -109,3 +109,18 @@ See the
 [workflows](https://github.com/longxi-go/ioc/tree/main/.github/workflows) for exact
 operator inputs and checks. Published release tags are immutable; use workflow
 retries to recover a failed release or Pages deployment.
+
+## Gin module verification and publication
+
+The Gin and Coffee modules declare `ginctl` as a Go tool dependency. Their
+generation targets use `go tool`, with the version selected by each `go.mod`.
+
+`make check-adapters` checks the Gin adapter and Gin/Coffee applications in a
+disposable source copy: dependency tidiness, vet, tests, race detection, lint and
+generated output. Temporary replacements select modules from that checkout.
+Repository module files remain unchanged, and a parent workspace is not required.
+Public module resolution and CLI installation must still be verified after release.
+
+Root tags use `vX.Y.Z`; Gin module tags use `adaptors/gin/vX.Y.Z`. Publish the
+root dependency before its adapter. Adapter releases do not change Latest or
+deploy Pages. Maintain their notes under `adaptors/gin/docs/releases/`.

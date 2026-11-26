@@ -67,15 +67,25 @@ func NewRequest(ctx context.Context, statistics *Statistics) (*Request, error) {
 认证的租户身份。`Destroy(context.Context) error` 在请求作用域关闭时记录释放，
 [Statistics][gin-examples-gin-request-go] 使用原子计数器记录并发请求的创建与销毁。
 
-[NewHandler][gin-examples-gin-handler-go] 使用构造注入：
+[Handler][gin-examples-gin-handler-go] 声明字段注入和 HTTP 端点：
 
 ```go
-// NewHandler keeps singleton dependencies explicit without capturing a request.
-// +ioc:bean
-func NewHandler(service *Service) *Handler {
-	return &Handler{
-		service: service,
+// Handler uses an injected Service without retaining request instances.
+// +ioc:controller:name=requestHandler
+type Handler struct {
+	// +ioc:inject
+	service *Service
+}
+
+// +ioc:http:get=/request
+func (h *Handler) serve(ctx *gin.Context) {
+	view, err := h.Describe(ctx.Request.Context())
+	if err != nil {
+		_ = ctx.Error(err)
+		unavailable(ctx)
+		return
 	}
+	ctx.JSON(http.StatusOK, view)
 }
 ```
 
@@ -87,7 +97,7 @@ make generate
 make check
 ```
 
-[Makefile][gin-examples-gin-makefile] 按 [go.mod][gin-examples-gin-go-mod] 中声明的 IoC 版本选择公开编译器，执行
+[Makefile][gin-examples-gin-makefile] 使用 [go.mod][gin-examples-gin-go-mod] 选定的 Gin 适配器版本运行 `ginctl`，执行
 `generate --entry . --roots .`。生成的 [zz_ioc.gen.go][gin-examples-gin-zz-ioc-gen-go] 包含包定义、
 查询计划与组合计划；其中 `init` 注册定义，`ApplicationContext.Start` 构造
 非延迟 Bean。生成文件与源码一同保留，修改声明或注解后重新生成，无需维护运行期
@@ -95,18 +105,28 @@ make check
 
 ## 装配 Gin 路由
 
-[New][gin-examples-gin-application-go] 创建 ApplicationContext、启动依赖图，再通过类型化
-`GetBean[T]` 获取 Handler 和 Statistics。随后调用 `gin.New()`，安装
-[RequestScope][gin-examples-gin-scope-middleware-go]，将 `GET /request` 注册到受管 Handler。
-路由构造和注册属于显式应用代码，注解处理提供对象及其依赖。
+[New][gin-examples-gin-application-go] 先启动 ApplicationContext，再通过适配器的
+`router.Register` 注册 `IOCGinRoutes()`。生成函数汇总注解声明的映射，各包的
+桥接代码直接调用私有方法。`+ioc:controller` 已包含组件注册语义，无需再添加
+`+ioc:component`。
 
-> **待办：参考 Spring 的 `GetMapping` 等映射注解，根据声明 HTTP 方法和路径的
-> 注释注解，生成 Handler 与路由注册代码。**
+```go
+middleware, err := RequestScope(owner, report)
+if err != nil {
+    return nil, err
+}
+engine := gin.New()
+engine.Use(middleware)
+if err := ginrouter.Register(ctx, engine, owner, IOCGinRoutes()...); err != nil {
+    return nil, err
+}
+```
 
-RequestScope 调用 `OpenScope(parent, gs.Request)`，将返回的 Context 设置到
-`ctx.Request`，执行后续处理器，并在 defer 中关闭作用域。处理器向业务方法传递
-`ctx.Request.Context()`；使用后台 Context 调用 Provider 会丢失 HTTP 操作的
-作用域能力。
+[RequestScope][gin-examples-gin-scope-middleware-go] 写入租户元数据，再调用
+`adaptors/gin/pkg/scope.Middleware` 管理作用域。适配器打开 Request 作用域，
+替换 HTTP 请求的 Context，并在处理结束后关闭作用域。包装层通过
+`ErrorHandlerFunc` 报告处理器记录的 Gin 错误。处理器向业务方法传递
+`ctx.Request.Context()`；后台 Context 无法解析当前 HTTP 请求的作用域依赖。
 
 `GET /request` 调用 Provider 两次：请求内 ID 相同，不同请求使用不同实例。
 租户缺失或操作已取消时返回 503，并通过 `ErrorHandlerFunc` 报告错误。

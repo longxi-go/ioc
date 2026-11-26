@@ -21,6 +21,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/longxi-go/ioc"
+	ginrouter "github.com/longxi-go/ioc/adaptors/gin/pkg/router"
 	managed "github.com/longxi-go/ioc/pkg/context"
 )
 
@@ -63,8 +64,14 @@ func New(ctx context.Context, report ErrorHandlerFunc) (_ *Application, err erro
 		return nil, err
 	}
 	router := gin.New()
-	router.Use(RequestScope(owner, report))
-	router.GET(requestPath, handler.serve(report))
+	middleware, err := RequestScope(owner, report)
+	if err != nil {
+		return nil, err
+	}
+	router.Use(middleware)
+	if err := ginrouter.Register(ctx, router, owner, IOCGinRoutes()...); err != nil {
+		return nil, err
+	}
 	return &Application{
 		context:    owner,
 		router:     router,

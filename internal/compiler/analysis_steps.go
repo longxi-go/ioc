@@ -111,6 +111,14 @@ func analyzeGeneration(ctx context.Context, g *generation) error {
 		if err != nil {
 			return err
 		}
+		if hasHTTPPackage(model) {
+			if g.options.Library {
+				return errors.New(httpLibraryMessage)
+			}
+			if g.options.HTTP == nil {
+				return errors.New(httpBackendMessage)
+			}
+		}
 		model.Sources, err = sourceHashes(pkg)
 		if err != nil {
 			return err
@@ -120,7 +128,7 @@ func analyzeGeneration(ctx context.Context, g *generation) error {
 			return err
 		}
 		g.models = append(g.models, model)
-		if len(model.Recipes) > 0 {
+		if len(model.Recipes) > 0 || hasHTTPPackage(model) {
 			g.local = append(g.local, model)
 		}
 	}

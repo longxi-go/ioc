@@ -61,3 +61,17 @@ gh workflow run docs-pages.yml --repo longxi-go/ioc --ref v0.1.0 -f release_tag=
 允许；在 main 手动恢复时，除了预检查要求的标签规则，还需要允许 main 的规则。
 已被新版本取代的 Release 不能覆盖当前站点。这些工作流不会修改 Pages 设置或
 移动现有标签，Pages 保护规则需要单独配置。
+
+## Gin 适配器发布
+
+Gin 模块使用 `adaptors/gin/vX.Y.Z` 标签。英文发布说明位于
+`adaptors/gin/docs/releases/vX.Y.Z.md`，标题为 `# ioc Gin adapter vX.Y.Z`。
+执行 `make validate-release MODULE=gin TAG=adaptors/gin/vX.Y.Z`；所依赖的根模块
+发布后，再执行 `make preflight-release MODULE=gin TAG=adaptors/gin/vX.Y.Z`。
+
+Release 工作流对根模块和适配器均检出、验证标签指向的精确提交。适配器发布要求
+其声明的稳定根模块 Release 已存在，不接管 Latest，也不触发 Pages。根模块标签
+继续管理 Latest 和 Pages。恢复流程仍通过 `release_tag` 输入选择模块完整标签。
+
+`check_modules.py` 对 Gin 适配器及 Gin、Coffee 应用执行临时副本验证；临时 replace
+指向同一份检出源码，原始模块文件保持不变。通过 `make check-adapters` 执行。

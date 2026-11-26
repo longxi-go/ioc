@@ -8,7 +8,7 @@ markers and unsupported targets also produce source diagnostics. Marker names
 are case-sensitive.
 
 In this reference **Bean declaration** means a `+ioc:bean` function or a
-`+ioc:component` struct. A declaration supplement needs one of
+`+ioc:component` or `+ioc:controller` struct. A declaration supplement needs one of
 those registration markers. A field supplement needs `+ioc:inject`. A
 `+ioc:listen` method accepts only the `+ioc:order` supplement.
 
@@ -24,7 +24,8 @@ empty `havingValue`, as specified below.
 | --- | --- | --- | --- | --- |
 | `+ioc:bean:name=readDB,aliases={reportsDB}` | Package-level function | No registration | No | Constructor returns `T` or `(T, error)`; not a method, variadic function or open generic. Bare marker is valid; name defaults to the function name. |
 | `+ioc:component:name=repository,aliases={repo}` | Named non-generic struct | No registration | No | Generates `&T{}` and annotated field assignments; does not call a constructor. Bare marker is valid; name defaults to the type name. |
-| `+ioc:listener` | Bean declaration | No subscription | No | Requires explicit bean/component registration and `OnEvent(context.Context, E) error`; subscribes the statically declared result type |
+| `+ioc:controller:name=health,aliases={healthz}` | Named non-generic struct | No registration | No | Component registration specialized for HTTP endpoints; see [HTTP and Gin](http.md) for mappings |
+| `+ioc:listener` | Bean declaration | No subscription | No | Requires explicit Bean registration and `OnEvent(context.Context, E) error`; subscribes the statically declared result type |
 | `+ioc:listen` | Receiver method with a statically known managed concrete owner | No subscription | No | Requires `(context.Context, E) error`; free functions and orphan methods are errors |
 | `+ioc:inject:name=readDB,qualifiers={sql}` | Named component field | Field is left untouched | No | Bare marker selects by field type; optional name/alias and qualifiers refine selection; private fields work, embedded and Context fields are rejected |
 | `+ioc:param:parameter=read,name=readDB,qualifiers={sql,read}` | Bean constructor | Parameter type only | Yes, once per parameter | Existing named parameter; at least `name` or `qualifiers`; cannot target `_`, unknown parameters or Context |
@@ -46,6 +47,12 @@ structured `param` marker, `parameter` is required; `name` and `qualifiers` are
 optional individually. Registration name/aliases and injection name/qualifiers are
 optional. Blank names/identifiers, duplicate aliases/qualifiers and unknown
 attributes are errors. `listener` accepts no attributes.
+
+## Controllers and HTTP routes
+
+`+ioc:controller` specializes component registration and supports names, aliases,
+field injection, conditions and lifecycle hooks. See [HTTP and Gin](http.md) for
+canonical and shorthand route annotations, targets and path rules.
 
 ## Registration and contracts
 

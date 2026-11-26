@@ -17,13 +17,18 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+
+	gs "github.com/longxi-go/gosr/pkg/ioc"
 
 	"github.com/gin-gonic/gin"
 	"github.com/longxi-go/gosr/pkg/event"
@@ -70,14 +75,20 @@ func routerTest(t *testing.T) *gin.Engine {
 	if err != nil {
 		t.Fatal(err)
 	}
+	factory := controllerBeans{
+		"API": &API{
+			orders: orders,
+		},
+		"Pages": &Pages{
+			orders: orders,
+			view:   renderer,
+		},
+	}
 	router := gin.New()
-	(&API{
-		orders: orders,
-	}).Register(router)
-	(&Pages{
-		orders: orders,
-		view:   renderer,
-	}).Register(router)
+	for _, route := range IOCGinPackageRoutes() {
+		router.Handle(route.Method, route.Path, route.Bind(factory))
+	}
+
 	return router
 }
 
@@ -252,4 +263,35 @@ func TestSizeLimitsWithOtherwiseValidPayloads(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &page); err != nil || page.Total != 0 {
 		t.Fatal("oversized input persisted", page, err)
 	}
+}
+
+func TestPaginationDoesNotWrapMaximumOffset(t *testing.T) {
+	engine := routerTest(t)
+	path := "/?offset=" + strconv.Itoa(math.MaxInt)
+	response := dispatch(engine, http.MethodGet, path, "", "")
+	if response.Code != http.StatusOK {
+		t.Fatalf("maximum offset: status=%d body=%s", response.Code, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), "Next") || strings.Contains(response.Body.String(), "offset=-") {
+		t.Fatalf("pagination overflow produced an invalid next page: %s", response.Body.String())
+	}
+}
+
+// controllerBeans isolates MVC behavior while exercising the generated mappings.
+type controllerBeans map[string]any
+
+func (f controllerBeans) Lookup(_ context.Context, selector gs.Selector) (any, error) {
+	value, ok := f[selector.Name]
+	if !ok {
+		return nil, fmt.Errorf("unexpected controller selector: %+v", selector)
+	}
+	return value, nil
+}
+
+func (f controllerBeans) LookupAll(ctx context.Context, selector gs.Selector) ([]any, error) {
+	value, err := f.Lookup(ctx, selector)
+	if err != nil {
+		return nil, err
+	}
+	return []any{value}, nil
 }

@@ -92,3 +92,17 @@ Pages 配置获取基地址。使用自定义域名还需设置 Pages 域名。�
 [发布工具文档](https://github.com/longxi-go/ioc/tree/main/docs/releases) 和
 [工作流](https://github.com/longxi-go/ioc/tree/main/.github/workflows)。已发布版本标签
 不可变；发布或 Pages 部署失败时，通过重试工作流恢复。
+
+## Gin 模块验证与发布
+
+Gin 和 Coffee 模块通过 Go tool 指令声明 `ginctl`，生成目标使用 `go tool`，
+版本由各自的 `go.mod` 选定。
+
+`make check-adapters` 在临时源码副本中校验 Gin 适配器及 Gin、Coffee 应用，
+执行依赖整洁性检查、vet、测试、race、lint 和生成结果检查。副本中的临时 replace
+指向同一提交的源模块；不会改写仓库的模块文件，也不要求维护者的父级工作区。
+发布后仍需单独验证公开模块解析和 CLI 安装。
+
+根模块使用 `vX.Y.Z`，Gin 模块使用 `adaptors/gin/vX.Y.Z` 标签。先发布根模块，
+再发布依赖它的适配器；适配器发布不修改 Latest，也不部署 Pages。
+适配器发布说明位于 `adaptors/gin/docs/releases/`。

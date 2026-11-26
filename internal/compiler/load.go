@@ -221,15 +221,20 @@ type packageLoad struct {
 	Overlay  map[string][]byte
 }
 
-func load(ctx context.Context, request packageLoad) ([]*packages.Package, error) {
+func packageConfig(ctx context.Context, request packageLoad) *packages.Config {
 	cfg := packageload.Config(ctx, request.Dir, request.Overlay)
-	cfg.Mode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
-		packages.NeedImports | packages.NeedDeps | packages.NeedTypes |
-		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedModule
 	cfg.Env = commandEnvironment(ctx)
 	if len(request.Tags) > 0 {
 		cfg.BuildFlags = []string{buildTagsFlagPrefix + strings.Join(request.Tags, buildTagSeparator)}
 	}
+	return cfg
+}
+
+func load(ctx context.Context, request packageLoad) ([]*packages.Package, error) {
+	cfg := packageConfig(ctx, request)
+	cfg.Mode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
+		packages.NeedImports | packages.NeedDeps | packages.NeedTypes |
+		packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedModule
 	pkgs, err := packageload.Load(cfg, request.Patterns...)
 	if err != nil {
 		return nil, err

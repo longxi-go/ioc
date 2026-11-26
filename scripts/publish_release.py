@@ -113,12 +113,15 @@ def publish(repository: str, payload: dict, commit: str) -> bool:
     published = github_read(f"{prefix}/releases/tags/{tag}", missing_ok=True)
     if published is None:
         creation = dict(payload)
-        latest = github_read(f"{prefix}/releases/latest", missing_ok=True)
-        if latest is not None and stable_version(latest.get("tag_name", "")) > stable_version(tag):
-            creation["make_latest"] = "false"
+        if payload["make_latest"] == "true":
+            latest = github_read(f"{prefix}/releases/latest", missing_ok=True)
+            if latest is not None and stable_version(latest.get("tag_name", "")) > stable_version(tag):
+                creation["make_latest"] = "false"
         # A failed POST has an uncertain result. Recovery reruns the read-first flow.
         published = github_api(f"{prefix}/releases", payload=creation)
     verify_content(published, payload)
+    if payload["make_latest"] == "false":
+        return False
     return wait_for_latest(repository, tag)
 
 
@@ -148,13 +151,14 @@ def main() -> None:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--repository", default=REPOSITORY)
     parser.add_argument("--tag", required=True)
+    parser.add_argument("--module", choices=("root", "gin"), default="root")
     parser.add_argument("--commit")
     parser.add_argument("--require-latest", action="store_true")
     args = parser.parse_args()
     try:
         if (not args.require_latest or args.commit is not None) and not re.fullmatch(r"[0-9a-f]{40}", args.commit or ""):
             raise ValueError("A full checked source commit SHA is required")
-        payload = release_payload(args.root, args.tag)
+        payload = release_payload(args.root, args.tag, args.module)
         if args.require_latest:
             require_latest(args.repository, payload, args.commit)
             return

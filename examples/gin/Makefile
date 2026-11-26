@@ -5,8 +5,8 @@ GOLANGCI_LINT ?= golangci-lint
 override export GOWORK := off
 override export GOTOOLCHAIN := local
 MODULE := github.com/longxi-go/ioc
-VERSION := $(shell GOWORK=off GOTOOLCHAIN=local $(GO) list -m -f '{{.Version}}' $(MODULE))
-COMPILER := $(MODULE)/cmd/ioctl@$(VERSION)
+GIN := $(MODULE)/adaptors/gin
+COMPILER := $(GIN)/cmd/ginctl
 
 .PHONY: help generate check-generated format check-format test race vet lint verify-mod check run
 
@@ -25,9 +25,9 @@ help:
 	  '  run               Dispatch a real Gin request without opening a listener'
 
 generate:
-	$(GO) run $(COMPILER) generate --entry . --roots .
+	$(GO) tool $(COMPILER) generate --entry . --roots .
 check-generated:
-	$(GO) run $(COMPILER) check --entry . --roots .
+	$(GO) tool $(COMPILER) check --entry . --roots .
 format:
 	$(MAKE) -C ../.. format
 check-format:
