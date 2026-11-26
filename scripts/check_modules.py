@@ -30,11 +30,11 @@ def metadata_without_replacements(path: Path) -> dict:
     return metadata
 
 
-def external_checksums(path: Path, modules: set[str]) -> set[str]:
+def external_checksums(path: Path, modules: set[str]) -> list[str]:
     if not path.exists():
-        return set()
-    return {line for line in path.read_text().splitlines()
-            if line.strip() and line.split()[0] not in modules}
+        return []
+    return [line for line in path.read_text().splitlines()
+            if line.strip() and line.split()[0] not in modules]
 
 
 def check(root: Path, mode: str, *, paths: tuple[str, ...] = MODULE_DIRECTORIES) -> None:
@@ -66,6 +66,8 @@ def check(root: Path, mode: str, *, paths: tuple[str, ...] = MODULE_DIRECTORIES)
                 raise ValueError(f"{relative}/go.mod is not tidy against checkout dependencies")
             if external_checksums(directory / "go.sum", set(names.values())) != checksums:
                 raise ValueError(f"{relative}/go.sum is not tidy against checkout dependencies")
+            # Tidy may leave ordering untouched when the checksum set is unchanged.
+            run([go, "mod", "tidy", "-diff"], directory, env)
             run([go, "mod", "verify"], directory, env)
             if mode == "verify":
                 continue
